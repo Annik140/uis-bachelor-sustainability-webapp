@@ -1,0 +1,6 @@
+@uis_bachelor_sustainability_webapp_HostAddress = http://localhost:5120
+
+GET {{uis_bachelor_sustainability_webapp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
