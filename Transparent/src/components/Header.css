@@ -1,0 +1,106 @@
+.header {
+  width: 100%;
+  padding: 80px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #ffffff;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.header-title {
+  font-size: 72px;
+  font-weight: 400;
+  margin: 0 0 20px 0;
+  font-family: 'Georgia', serif;
+  letter-spacing: 2px;
+}
+
+.header-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 40px 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+  font-family: 'Georgia', serif;
+}
+
+.search-form {
+  margin-bottom: 50px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 600px;
+  padding: 15px 20px;
+  font-size: 16px;
+  border: 2px solid #000;
+  background-color: #ffffff;
+  padding-left: 50px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.35-4.35'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 15px center;
+  font-family: 'Georgia', serif;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.stats-container {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  margin-top: 50px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 48px;
+  font-weight: 400;
+  margin-bottom: 10px;
+  font-family: 'Georgia', serif;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #999;
+  letter-spacing: 2px;
+  font-family: 'Arial', sans-serif;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 40px 20px;
+  }
+
+  .header-title {
+    font-size: 48px;
+  }
+
+  .header-subtitle {
+    font-size: 14px;
+  }
+
+  .stats-container {
+    gap: 40px;
+    flex-direction: column;
+  }
+
+  .stat-number {
+    font-size: 36px;
+  }
+}
