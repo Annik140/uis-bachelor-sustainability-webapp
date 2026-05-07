@@ -1,8 +1,14 @@
+using Microsoft.EntityFrameworkCore;
+using uis_bachelor_sustainability_webapp.Data;
+using uis_bachelor_sustainability_webapp.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
@@ -14,28 +20,33 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapGet("/brands", async (AppDbContext db) =>
+    await db.ClothingBrands
+        .OrderByDescending(x => x.CreatedAtUtc)
+        .ToListAsync());
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/brands/{id:int}", async (int id, AppDbContext db) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var brand = await db.ClothingBrands.FindAsync(id);
+    return brand is null ? Results.NotFound() : Results.Ok(brand);
 })
-.WithName("GetWeatherForecast");
+.WithName("GetBrandById");
+
+app.MapPost("/brands", async (ClothingBrand input, AppDbContext db) =>
+{
+    var entity = new ClothingBrand
+    {
+        BrandName = input.BrandName,
+        Category = input.Category,
+        SustainabilityScore = input.SustainabilityScore,
+        CreatedAtUtc = DateTime.UtcNow
+    };
+
+    db.ClothingBrands.Add(entity);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/brands/{entity.Id}", entity);
+})
+.WithName("CreateBrand");
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
