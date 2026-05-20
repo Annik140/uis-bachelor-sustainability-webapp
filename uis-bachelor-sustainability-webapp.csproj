@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>uis_bachelor_sustainability_webapp</RootNamespace>
+    <UserSecretsId>e8fd3eec-1a15-42ff-ba53-18aad9604f43</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
