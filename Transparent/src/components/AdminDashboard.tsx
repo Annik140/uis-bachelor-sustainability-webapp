@@ -5,11 +5,25 @@ type Brand = {
   brandName: string
   category?: string
   sustainabilityScore?: number
+  transparencyScore?: number
+  materialSustainabilityScore?: number
+  laborPracticesScore?: number
+  carbonFootprintScore?: number
+  productLongevityScore?: number
+  evidenceSourceCount?: number
 }
 
 export default function AdminDashboard(){
   const [brands, setBrands] = useState<Brand[]>([])
-  const [form, setForm] = useState<Brand>({ brandName: '', category: '', sustainabilityScore: undefined })
+  const [form, setForm] = useState<Brand>({
+    brandName: '',
+    category: '',
+    materialSustainabilityScore: undefined,
+    laborPracticesScore: undefined,
+    carbonFootprintScore: undefined,
+    productLongevityScore: undefined,
+    evidenceSourceCount: 0
+  })
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
 
@@ -32,7 +46,15 @@ export default function AdminDashboard(){
           body: JSON.stringify(form)
         })
         if (res.ok) {
-          setForm({ brandName: '', category: '', sustainabilityScore: undefined })
+          setForm({
+            brandName: '',
+            category: '',
+            materialSustainabilityScore: undefined,
+            laborPracticesScore: undefined,
+            carbonFootprintScore: undefined,
+            productLongevityScore: undefined,
+            evidenceSourceCount: 0
+          })
           setEditingId(null)
           fetchBrands()
           return
@@ -45,7 +67,15 @@ export default function AdminDashboard(){
           body: JSON.stringify(form)
         })
         if(res.ok){
-          setForm({ brandName: '', category: '', sustainabilityScore: undefined })
+          setForm({
+            brandName: '',
+            category: '',
+            materialSustainabilityScore: undefined,
+            laborPracticesScore: undefined,
+            carbonFootprintScore: undefined,
+            productLongevityScore: undefined,
+            evidenceSourceCount: 0
+          })
           fetchBrands()
           return
         }
@@ -64,19 +94,35 @@ export default function AdminDashboard(){
 
   function startEdit(b: Brand){
     setEditingId(b.id ?? null)
-    setForm({ brandName: b.brandName, category: b.category, sustainabilityScore: b.sustainabilityScore })
+    setForm({
+      brandName: b.brandName,
+      category: b.category,
+      materialSustainabilityScore: b.materialSustainabilityScore,
+      laborPracticesScore: b.laborPracticesScore,
+      carbonFootprintScore: b.carbonFootprintScore,
+      productLongevityScore: b.productLongevityScore,
+      evidenceSourceCount: b.evidenceSourceCount ?? 0
+    })
   }
 
   function cancelEdit(){
     setEditingId(null)
-    setForm({ brandName: '', category: '', sustainabilityScore: undefined })
+    setForm({
+      brandName: '',
+      category: '',
+      materialSustainabilityScore: undefined,
+      laborPracticesScore: undefined,
+      carbonFootprintScore: undefined,
+      productLongevityScore: undefined,
+      evidenceSourceCount: 0
+    })
   }
 
   return (
     <div style={{padding: 20}}>
       <h2>Admin Dashboard</h2>
       <section>
-        <h3>Create Brand</h3>
+        <h3>{editingId ? 'Edit Brand' : 'Create Brand'}</h3>
         <form onSubmit={handleCreate}>
           <div>
             <label>Brand name</label>
@@ -87,8 +133,24 @@ export default function AdminDashboard(){
             <input value={form.category} onChange={e => setForm({...form, category: e.target.value})} />
           </div>
           <div>
-            <label>Sustainability score</label>
-            <input type="number" step="0.1" value={form.sustainabilityScore ?? ''} onChange={e => setForm({...form, sustainabilityScore: e.target.value ? Number(e.target.value) : undefined})} />
+            <label>Material sustainability score</label>
+            <input type="number" min="0" max="10" step="0.1" value={form.materialSustainabilityScore ?? ''} onChange={e => setForm({...form, materialSustainabilityScore: e.target.value ? Number(e.target.value) : undefined})} />
+          </div>
+          <div>
+            <label>Labor practices score</label>
+            <input type="number" min="0" max="10" step="0.1" value={form.laborPracticesScore ?? ''} onChange={e => setForm({...form, laborPracticesScore: e.target.value ? Number(e.target.value) : undefined})} />
+          </div>
+          <div>
+            <label>Carbon footprint score</label>
+            <input type="number" min="0" max="10" step="0.1" value={form.carbonFootprintScore ?? ''} onChange={e => setForm({...form, carbonFootprintScore: e.target.value ? Number(e.target.value) : undefined})} />
+          </div>
+          <div>
+            <label>Product longevity score</label>
+            <input type="number" min="0" max="10" step="0.1" value={form.productLongevityScore ?? ''} onChange={e => setForm({...form, productLongevityScore: e.target.value ? Number(e.target.value) : undefined})} />
+          </div>
+          <div>
+            <label>Evidence sources used</label>
+            <input type="number" min="0" step="1" value={form.evidenceSourceCount ?? 0} onChange={e => setForm({...form, evidenceSourceCount: e.target.value ? Number(e.target.value) : 0})} />
           </div>
           <button type="submit">{editingId ? 'Save' : 'Create'}</button>
           {editingId && <button type="button" onClick={cancelEdit} style={{marginLeft:8}}>Cancel</button>}
@@ -101,7 +163,7 @@ export default function AdminDashboard(){
         <ul>
           {brands.map(b => (
             <li key={b.id} style={{marginBottom:8}}>
-              <strong>{b.brandName}</strong> — {b.category} — {b.sustainabilityScore}
+              <strong>{b.brandName}</strong> — {b.category} — sustainability {b.sustainabilityScore?.toFixed(1)} / 10 — transparency {b.transparencyScore?.toFixed(1)} / 5
               <button onClick={()=>startEdit(b)} style={{marginLeft:8}}>Edit</button>
               <button onClick={()=>handleDelete(b.id)} style={{marginLeft:8}}>Delete</button>
             </li>

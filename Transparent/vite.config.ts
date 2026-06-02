@@ -12,7 +12,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         // bypass GET requests (those are React routes like /admin/login, /admin/dashboard)
-        bypass(req, res, opt) {
+        bypass(req, _res, _opt) {
           if (req.method === 'GET') {
             return req.url;
           }

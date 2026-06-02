@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using uis_bachelor_sustainability_webapp.Data;
 using uis_bachelor_sustainability_webapp.Models;
+using uis_bachelor_sustainability_webapp.Services;
 
 namespace uis_bachelor_sustainability_webapp;
 
@@ -30,7 +31,7 @@ public class Program
                 options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
                 if (builder.Environment.IsDevelopment())
                 {
-                    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
+                    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
                     options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.None;
                 }
                 else
@@ -62,6 +63,12 @@ public class Program
 
         var app = builder.Build();
 
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.Migrate();
+        }
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
@@ -84,7 +91,7 @@ public class Program
         })
         .WithName("GetBrandById");
 
-        // Admin login endpoint - signs in cookie if credentials match env vars
+        // Admin login endpoint, signs in cookie if credentials match env vars
         app.MapPost("/admin/login", async (HttpContext ctx) =>
         {
             var dto = await ctx.Request.ReadFromJsonAsync<Models.LoginDto>();
@@ -129,9 +136,16 @@ public class Program
             {
                 BrandName = input.BrandName,
                 Category = input.Category,
-                SustainabilityScore = input.SustainabilityScore,
-                CreatedAtUtc = DateTime.UtcNow
+                MaterialSustainabilityScore = input.MaterialSustainabilityScore,
+                LaborPracticesScore = input.LaborPracticesScore,
+                CarbonFootprintScore = input.CarbonFootprintScore,
+                ProductLongevityScore = input.ProductLongevityScore,
+                EvidenceSourceCount = input.EvidenceSourceCount,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
             };
+
+            BrandScoreCalculator.ApplyScores(entity);
 
             db.ClothingBrands.Add(entity);
             await db.SaveChangesAsync();
@@ -144,7 +158,12 @@ public class Program
             if (existing is null) return Results.NotFound();
             existing.BrandName = input.BrandName;
             existing.Category = input.Category;
-            existing.SustainabilityScore = input.SustainabilityScore;
+            existing.MaterialSustainabilityScore = input.MaterialSustainabilityScore;
+            existing.LaborPracticesScore = input.LaborPracticesScore;
+            existing.CarbonFootprintScore = input.CarbonFootprintScore;
+            existing.ProductLongevityScore = input.ProductLongevityScore;
+            existing.EvidenceSourceCount = input.EvidenceSourceCount;
+            BrandScoreCalculator.ApplyScores(existing);
             await db.SaveChangesAsync();
             return Results.Ok(existing);
         }).RequireAuthorization("AdminOnly");
