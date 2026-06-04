@@ -22,25 +22,26 @@ type CriterionItem = {
   notes?: string
 }
 
+type CriterionInputKind = 'number' | 'select'
+
+type CriterionOption = {
+  label: string
+  value: number
+}
+
+type CriterionDefinition = {
+  category: string
+  name: string
+  inputKind: CriterionInputKind
+  options?: CriterionOption[]
+}
+
 type Brand = {
   id?: number
   brandName: string
-  category?: string
-  primarySourceTitle?: string
-  primarySourceUrl?: string
-  primarySourcePublishedAtUtc?: string
-  evidenceSummary?: string
-  sustainabilityScore?: number
-  transparencyScore?: number
-  materialSustainabilityScore?: number
-  laborPracticesScore?: number
-  carbonFootprintScore?: number
-  productLongevityScore?: number
   evidenceSourceCount?: number
   evidenceSources?: EvidenceSource[]
   criteriaItems?: CriterionItem[]
-  prosSummary?: string
-  consSummary?: string
 }
 
 const categoryLabels = [
@@ -54,23 +55,95 @@ const categoryValues = ['Material', 'Labor', 'Carbon', 'Longevity'] as const
 
 const createEmptyBrand = (): Brand => ({
   brandName: '',
-  category: '',
-  primarySourceTitle: '',
-  primarySourceUrl: '',
-  primarySourcePublishedAtUtc: undefined,
-  evidenceSummary: '',
-  sustainabilityScore: undefined,
-  transparencyScore: undefined,
-  materialSustainabilityScore: undefined,
-  laborPracticesScore: undefined,
-  carbonFootprintScore: undefined,
-  productLongevityScore: undefined,
   evidenceSourceCount: 0,
   evidenceSources: [],
-  criteriaItems: [],
-  prosSummary: '',
-  consSummary: ''
+  criteriaItems: DEFAULT_CRITERIA.map(c => ({
+    category: c.category,
+    name: c.name,
+    numericValue: undefined,
+    unit: '',
+    goodThreshold: undefined,
+    warningThreshold: undefined,
+    lowerIsBetter: true,
+    weight: 1,
+    notes: ''
+  })),
 })
+
+const DEFAULT_CRITERIA: CriterionDefinition[] = [
+  // Material
+  { category: 'Material', name: 'Fiber provenance', inputKind: 'select', options: [
+    { label: 'No traceability', value: 0 },
+    { label: 'Partial traceability', value: 5 },
+    { label: 'Full traceability', value: 10 }
+  ] },
+  { category: 'Material', name: 'Material toxicity & chemical management', inputKind: 'select', options: [
+    { label: 'No clear policy', value: 0 },
+    { label: 'Basic policy', value: 5 },
+    { label: 'Strong third-party verified policy', value: 10 }
+  ] },
+  { category: 'Material', name: 'Recycled / regenerative content', inputKind: 'number' },
+  { category: 'Material', name: 'Certifications & standards', inputKind: 'select', options: [
+    { label: 'None', value: 0 },
+    { label: 'One credible certification', value: 5 },
+    { label: 'Multiple credible certifications', value: 10 }
+  ] },
+  // Labor
+  { category: 'Labor', name: 'Living wage coverage', inputKind: 'number' },
+  { category: 'Labor', name: 'Worker safety & working hours', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Partial evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] },
+  { category: 'Labor', name: 'Freedom of association / grievance mechanisms', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Partial evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] },
+  { category: 'Labor', name: 'Supplier audit transparency', inputKind: 'select', options: [
+    { label: 'No public audits', value: 0 },
+    { label: 'Some audit visibility', value: 5 },
+    { label: 'Clear public audit reporting', value: 10 }
+  ] },
+  // Carbon
+  { category: 'Carbon', name: 'Measured footprint (Scope 1–3)', inputKind: 'select', options: [
+    { label: 'Not measured', value: 0 },
+    { label: 'Partial measurement', value: 5 },
+    { label: 'Full measurement', value: 10 }
+  ] },
+  { category: 'Carbon', name: 'Reduction targets & progress', inputKind: 'select', options: [
+    { label: 'No target', value: 0 },
+    { label: 'Target set', value: 5 },
+    { label: 'Target plus visible progress', value: 10 }
+  ] },
+  { category: 'Carbon', name: 'Energy sourcing (% renewable)', inputKind: 'number' },
+  { category: 'Carbon', name: 'Transport & logistics efficiency', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Some evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] },
+  // Longevity
+  { category: 'Longevity', name: 'Durability testing / expected lifetime', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Partial evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] },
+  { category: 'Longevity', name: 'Repairability & spare parts', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Partial evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] },
+  { category: 'Longevity', name: 'Design for timelessness / modularity', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Partial evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] },
+  { category: 'Longevity', name: 'Care instructions & user guidance', inputKind: 'select', options: [
+    { label: 'No evidence', value: 0 },
+    { label: 'Partial evidence', value: 5 },
+    { label: 'Clear evidence', value: 10 }
+  ] }
+]
 
 export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?: number }) {
   const [form, setForm] = useState<Brand>(createEmptyBrand())
@@ -79,15 +152,15 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
   const title = mode === 'create' ? 'Add new brand' : 'Edit brand'
   const subtitle = mode === 'create'
-    ? 'Fill in the four sustainability categories and add subcriteria rows underneath each one.'
-    : 'Update the brand and refine the scoring rubric without changing the dashboard layout.'
+    ? 'Fill in the fixed subcriteria for each category.'
+    : 'Update the fixed subcriteria without changing the dashboard layout.'
 
   const groupedCriteria = useMemo(() => {
     return categoryValues.map(category => ({
       category,
-      items: (form.criteriaItems ?? []).filter(item => item.category === category)
+      items: DEFAULT_CRITERIA.filter(item => item.category === category)
     }))
-  }, [form.criteriaItems])
+  }, [])
 
   useEffect(() => {
     if (mode !== 'edit' || !brandId) {
@@ -99,11 +172,28 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
       .then(response => response.ok ? response.json() : null)
       .then(data => {
         if (data) {
+          // Merge existing criteria with defaults so fixed subcriteria are always present
+          const existing: CriterionItem[] = data.criteriaItems ?? []
+          const merged = DEFAULT_CRITERIA.map(def => {
+            const found = existing.find((c: CriterionItem) => c.category === def.category && c.name === def.name)
+            return found ? { ...found } : {
+              category: def.category,
+              name: def.name,
+              numericValue: undefined,
+              unit: '',
+              goodThreshold: undefined,
+              warningThreshold: undefined,
+              lowerIsBetter: true,
+              weight: 1,
+              notes: ''
+            }
+          })
+
           setForm({
             ...createEmptyBrand(),
             ...data,
             evidenceSources: data.evidenceSources ?? [],
-            criteriaItems: data.criteriaItems ?? []
+            criteriaItems: merged
           })
         }
       })
@@ -139,34 +229,9 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     updateBrand({ evidenceSources })
   }
 
-  function addCriterion(category: (typeof categoryValues)[number]) {
-    updateBrand({
-      criteriaItems: [
-        ...(form.criteriaItems ?? []),
-        {
-          category,
-          name: '',
-          numericValue: undefined,
-          unit: '',
-          goodThreshold: undefined,
-          warningThreshold: undefined,
-          lowerIsBetter: true,
-          weight: 1,
-          notes: ''
-        }
-      ]
-    })
-  }
-
   function updateCriterion(index: number, patch: Partial<CriterionItem>) {
     const criteriaItems = [...(form.criteriaItems ?? [])]
     criteriaItems[index] = { ...criteriaItems[index], ...patch }
-    updateBrand({ criteriaItems })
-  }
-
-  function removeCriterion(index: number) {
-    const criteriaItems = [...(form.criteriaItems ?? [])]
-    criteriaItems.splice(index, 1)
     updateBrand({ criteriaItems })
   }
 
@@ -226,82 +291,56 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
             <label>Brand name</label>
             <input required value={form.brandName} onChange={e => updateBrand({ brandName: e.target.value })} />
           </div>
-          <div>
-            <label>Category</label>
-            <input value={form.category ?? ''} onChange={e => updateBrand({ category: e.target.value })} />
-          </div>
-          <div>
-            <label>Primary source title</label>
-            <input value={form.primarySourceTitle ?? ''} onChange={e => updateBrand({ primarySourceTitle: e.target.value })} />
-          </div>
-          <div>
-            <label>Primary source URL</label>
-            <input value={form.primarySourceUrl ?? ''} onChange={e => updateBrand({ primarySourceUrl: e.target.value })} />
-          </div>
-          <div>
-            <label>Primary source published date</label>
-            <input type="date" value={form.primarySourcePublishedAtUtc ? form.primarySourcePublishedAtUtc.slice(0, 10) : ''} onChange={e => updateBrand({ primarySourcePublishedAtUtc: e.target.value ? new Date(e.target.value).toISOString() : undefined })} />
-          </div>
-          <div>
-            <label>Evidence summary</label>
-            <textarea value={form.evidenceSummary ?? ''} onChange={e => updateBrand({ evidenceSummary: e.target.value })} />
-          </div>
         </section>
 
         <section>
           <h3>Scoring rubric</h3>
-          <p>Each category can contain multiple subcriteria. Use a numeric value and thresholds to automatically create pros and cons reasoning.</p>
+          <p>Fixed subcriteria are provided below for each category. Some boxes are numeric, others are simple dropdowns. Sources are attached to the brand (not per criterion).</p>
           {groupedCriteria.map(group => (
             <div key={group.category} style={{ marginTop: 18, border: '1px solid #e5e5e5', borderRadius: 12, padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4>{categoryLabels[categoryValues.indexOf(group.category as (typeof categoryValues)[number])]}</h4>
-                <button type="button" onClick={() => addCriterion(group.category as (typeof categoryValues)[number])}>Add subcriteria</button>
-              </div>
+              <h4>{categoryLabels[categoryValues.indexOf(group.category as (typeof categoryValues)[number])]}</h4>
 
-              {group.items.length === 0 ? (
-                <p style={{ color: '#777' }}>No subcriteria added yet.</p>
-              ) : (
-                group.items.map(item => {
-                  const index = (form.criteriaItems ?? []).findIndex(candidate => candidate === item)
-                  return (
-                    <div key={`${item.category}-${index}-${item.name}`} style={{ marginTop: 12, padding: 12, background: '#fafafa', borderRadius: 10 }}>
-                      <div>
-                        <label>Subcriteria label</label>
-                        <input value={item.name} onChange={e => updateCriterion(index, { name: e.target.value })} placeholder="Example: annual CO2 output" />
-                      </div>
-                      <div>
-                        <label>Numeric value</label>
-                        <input type="number" step="0.1" value={item.numericValue ?? ''} onChange={e => updateCriterion(index, { numericValue: e.target.value ? Number(e.target.value) : undefined })} />
-                      </div>
-                      <div>
-                        <label>Unit</label>
-                        <input value={item.unit ?? ''} onChange={e => updateCriterion(index, { unit: e.target.value })} placeholder="kg CO2e / year" />
-                      </div>
-                      <div>
-                        <label>Good threshold</label>
-                        <input type="number" step="0.1" value={item.goodThreshold ?? ''} onChange={e => updateCriterion(index, { goodThreshold: e.target.value ? Number(e.target.value) : undefined })} />
-                      </div>
-                      <div>
-                        <label>Warning threshold</label>
-                        <input type="number" step="0.1" value={item.warningThreshold ?? ''} onChange={e => updateCriterion(index, { warningThreshold: e.target.value ? Number(e.target.value) : undefined })} />
-                      </div>
-                      <div>
-                        <label>Lower is better</label>
-                        <input type="checkbox" checked={item.lowerIsBetter} onChange={e => updateCriterion(index, { lowerIsBetter: e.target.checked })} />
-                      </div>
-                      <div>
-                        <label>Weight</label>
-                        <input type="number" step="0.1" value={item.weight ?? 1} onChange={e => updateCriterion(index, { weight: e.target.value ? Number(e.target.value) : 1 })} />
-                      </div>
-                      <div>
-                        <label>Notes</label>
-                        <textarea value={item.notes ?? ''} onChange={e => updateCriterion(index, { notes: e.target.value })} />
-                      </div>
-                      <button type="button" onClick={() => removeCriterion(index)}>Remove subcriteria</button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
+                {group.items.map(def => {
+                  const index = (form.criteriaItems ?? []).findIndex(candidate => candidate.category === def.category && candidate.name === def.name)
+                  const item = (form.criteriaItems ?? [])[index]
+
+                  const inputValue = item?.numericValue ?? ''
+                  const updateNumericValue = (value: string) => {
+                    updateCriterion(index, { numericValue: value ? Number(value) : undefined })
+                  }
+
+                return (
+                  <div key={`${def.category}-${def.name}`} style={{ padding: 12, background: '#fafafa', borderRadius: 10, minHeight: 120 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <label style={{ display: 'block', fontSize: 13, color: '#555' }}>{def.name}</label>
                     </div>
-                  )
-                })
-              )}
+
+                    {def.inputKind === 'number' ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={inputValue}
+                        onChange={e => updateNumericValue(e.target.value)}
+                        placeholder="Enter % or value"
+                      />
+                    ) : (
+                      <select
+                        value={inputValue}
+                        onChange={e => updateNumericValue(e.target.value)}
+                      >
+                        <option value="">Select one</option>
+                        {def.options?.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )
+                })}
+              </div>
             </div>
           ))}
         </section>
@@ -330,38 +369,6 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
               <button type="button" onClick={() => removeEvidenceSource(index)}>Remove source</button>
             </div>
           ))}
-        </section>
-
-        <section>
-          <h3>Scoring result preview</h3>
-          <div>
-            <label>Pros summary</label>
-            <textarea value={form.prosSummary ?? ''} readOnly />
-          </div>
-          <div>
-            <label>Cons summary</label>
-            <textarea value={form.consSummary ?? ''} readOnly />
-          </div>
-          <div>
-            <label>Material score</label>
-            <input readOnly value={form.materialSustainabilityScore ?? ''} />
-          </div>
-          <div>
-            <label>Labor score</label>
-            <input readOnly value={form.laborPracticesScore ?? ''} />
-          </div>
-          <div>
-            <label>Carbon score</label>
-            <input readOnly value={form.carbonFootprintScore ?? ''} />
-          </div>
-          <div>
-            <label>Longevity score</label>
-            <input readOnly value={form.productLongevityScore ?? ''} />
-          </div>
-          <div>
-            <label>Transparency score</label>
-            <input readOnly value={form.transparencyScore ?? ''} />
-          </div>
         </section>
 
         {error && <p style={{ color: 'red' }}>{error}</p>}

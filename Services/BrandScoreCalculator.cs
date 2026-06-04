@@ -9,6 +9,35 @@ public static class BrandScoreCalculator
     private const decimal CarbonWeight = 0.25m;
     private const decimal LongevityWeight = 0.20m;
 
+    private static readonly IReadOnlyDictionary<string, CriterionDefinition> CriterionDefinitions =
+        new Dictionary<string, CriterionDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Material
+            [Key("Material", "Fiber provenance")] = new("Material", "Fiber provenance", 0.30m, false, 8m, 4m, "%"),
+            [Key("Material", "Material toxicity & chemical management")] = new("Material", "Material toxicity & chemical management", 0.20m, false, 8m, 4m, null),
+            [Key("Material", "Recycled / regenerative content")] = new("Material", "Recycled / regenerative content", 0.20m, false, 50m, 20m, "%"),
+            [Key("Material", "Certifications & standards")] = new("Material", "Certifications & standards", 0.15m, false, 8m, 4m, null),
+            [Key("Material", "Packaging sustainability")] = new("Material", "Packaging sustainability", 0.15m, false, 80m, 50m, "%"),
+
+            // Labor
+            [Key("Labor", "Living wage coverage")] = new("Labor", "Living wage coverage", 0.35m, false, 100m, 80m, "%"),
+            [Key("Labor", "Worker safety & working hours")] = new("Labor", "Worker safety & working hours", 0.25m, false, 8m, 4m, null),
+            [Key("Labor", "Freedom of association / grievance mechanisms")] = new("Labor", "Freedom of association / grievance mechanisms", 0.20m, false, 8m, 4m, null),
+            [Key("Labor", "Supplier audit transparency")] = new("Labor", "Supplier audit transparency", 0.20m, false, 8m, 4m, null),
+
+            // Carbon
+            [Key("Carbon", "Measured footprint (Scope 1–3)")] = new("Carbon", "Measured footprint (Scope 1–3)", 0.40m, true, 8m, 4m, null),
+            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.30m, false, 8m, 4m, null),
+            [Key("Carbon", "Energy sourcing (% renewable)")] = new("Carbon", "Energy sourcing (% renewable)", 0.20m, false, 80m, 50m, "%"),
+            [Key("Carbon", "Transport & logistics efficiency")] = new("Carbon", "Transport & logistics efficiency", 0.10m, false, 8m, 4m, null),
+
+            // Longevity
+            [Key("Longevity", "Durability testing / expected lifetime")] = new("Longevity", "Durability testing / expected lifetime", 0.40m, false, 8m, 4m, null),
+            [Key("Longevity", "Repairability & spare parts")] = new("Longevity", "Repairability & spare parts", 0.30m, false, 8m, 4m, null),
+            [Key("Longevity", "Design for timelessness / modularity")] = new("Longevity", "Design for timelessness / modularity", 0.20m, false, 8m, 4m, null),
+            [Key("Longevity", "Care instructions & user guidance")] = new("Longevity", "Care instructions & user guidance", 0.10m, false, 8m, 4m, null)
+        };
+
     public static void ApplyScores(ClothingBrand brand)
     {
         var criteriaItems = brand.CriteriaItems?.ToList() ?? new List<BrandCriterionItem>();
@@ -68,18 +97,32 @@ public static class BrandScoreCalculator
             item.Name = item.Name.Trim();
             item.Unit = item.Unit?.Trim();
             item.Notes = item.Notes?.Trim();
-            item.Weight = Clamp(item.Weight, 0.1m, 10m);
+
+            var definition = ResolveDefinition(item.Category, item.Name);
+            if (definition is not null)
+            {
+                item.Weight = definition.Value.Weight;
+                item.LowerIsBetter = definition.Value.LowerIsBetter;
+                item.GoodThreshold = definition.Value.GoodThreshold;
+                item.WarningThreshold = definition.Value.WarningThreshold;
+                item.Unit = definition.Value.Unit ?? item.Unit;
+            }
+            else
+            {
+                item.Weight = Clamp(item.Weight, 0.1m, 10m);
+                if (item.GoodThreshold.HasValue)
+                {
+                    item.GoodThreshold = RoundToOneDecimal(item.GoodThreshold.Value);
+                }
+                if (item.WarningThreshold.HasValue)
+                {
+                    item.WarningThreshold = RoundToOneDecimal(item.WarningThreshold.Value);
+                }
+            }
+
             if (item.NumericValue.HasValue)
             {
                 item.NumericValue = RoundToOneDecimal(item.NumericValue.Value);
-            }
-            if (item.GoodThreshold.HasValue)
-            {
-                item.GoodThreshold = RoundToOneDecimal(item.GoodThreshold.Value);
-            }
-            if (item.WarningThreshold.HasValue)
-            {
-                item.WarningThreshold = RoundToOneDecimal(item.WarningThreshold.Value);
             }
         }
     }
@@ -250,10 +293,20 @@ public static class BrandScoreCalculator
         return Math.Min(Math.Max(value, min), max);
     }
 
+    private static string Key(string category, string name) => $"{category}:{name}";
+
+    private static CriterionDefinition? ResolveDefinition(string category, string name)
+    {
+        CriterionDefinitions.TryGetValue(Key(category, name), out var definition);
+        return definition;
+    }
+
     private static decimal RoundToOneDecimal(decimal value)
     {
         return Math.Round(value, 1, MidpointRounding.AwayFromZero);
     }
 
     private readonly record struct CategoryScoreResult(decimal? Score, decimal WeightSum);
+
+    private readonly record struct CriterionDefinition(string Category, string Name, decimal Weight, bool LowerIsBetter, decimal GoodThreshold, decimal WarningThreshold, string? Unit);
 }
