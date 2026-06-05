@@ -13,29 +13,29 @@ public static class BrandScoreCalculator
         new Dictionary<string, CriterionDefinition>(StringComparer.OrdinalIgnoreCase)
         {
             // Material
-            [Key("Material", "Fiber provenance")] = new("Material", "Fiber provenance", 0.30m, false, 8m, 4m, "%"),
-            [Key("Material", "Material toxicity & chemical management")] = new("Material", "Material toxicity & chemical management", 0.20m, false, 8m, 4m, null),
-            [Key("Material", "Recycled / regenerative content")] = new("Material", "Recycled / regenerative content", 0.20m, false, 50m, 20m, "%"),
-            [Key("Material", "Certifications & standards")] = new("Material", "Certifications & standards", 0.15m, false, 8m, 4m, null),
+            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, false, 8m, 4m, "%"),
+            [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.20m, false, 8m, 4m, null),
+            [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.20m, false, 50m, 20m, "%"),
+            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.15m, false, 8m, 4m, null),
             [Key("Material", "Packaging sustainability")] = new("Material", "Packaging sustainability", 0.15m, false, 80m, 50m, "%"),
 
             // Labor
-            [Key("Labor", "Living wage coverage")] = new("Labor", "Living wage coverage", 0.35m, false, 100m, 80m, "%"),
+            [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.35m, false, 100m, 80m, "%"),
             [Key("Labor", "Worker safety & working hours")] = new("Labor", "Worker safety & working hours", 0.25m, false, 8m, 4m, null),
             [Key("Labor", "Freedom of association / grievance mechanisms")] = new("Labor", "Freedom of association / grievance mechanisms", 0.20m, false, 8m, 4m, null),
             [Key("Labor", "Supplier audit transparency")] = new("Labor", "Supplier audit transparency", 0.20m, false, 8m, 4m, null),
 
             // Carbon
-            [Key("Carbon", "Measured footprint (Scope 1–3)")] = new("Carbon", "Measured footprint (Scope 1–3)", 0.40m, true, 8m, 4m, null),
-            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.30m, false, 8m, 4m, null),
-            [Key("Carbon", "Energy sourcing (% renewable)")] = new("Carbon", "Energy sourcing (% renewable)", 0.20m, false, 80m, 50m, "%"),
-            [Key("Carbon", "Transport & logistics efficiency")] = new("Carbon", "Transport & logistics efficiency", 0.10m, false, 8m, 4m, null),
+            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.35m, false, 8m, 4m, null),
+            [Key("Carbon", "Renewable energy")] = new("Carbon", "Renewable energy", 0.30m, false, 80m, 50m, "%"),
+            [Key("Carbon", "Transport & logistics")] = new("Carbon", "Transport & logistics", 0.20m, false, 8m, 4m, null),
+            [Key("Carbon", "Scope 1-3 measurement")] = new("Carbon", "Scope 1-3 measurement", 0.15m, true, 8m, 4m, null),
 
             // Longevity
-            [Key("Longevity", "Durability testing / expected lifetime")] = new("Longevity", "Durability testing / expected lifetime", 0.40m, false, 8m, 4m, null),
-            [Key("Longevity", "Repairability & spare parts")] = new("Longevity", "Repairability & spare parts", 0.30m, false, 8m, 4m, null),
-            [Key("Longevity", "Design for timelessness / modularity")] = new("Longevity", "Design for timelessness / modularity", 0.20m, false, 8m, 4m, null),
-            [Key("Longevity", "Care instructions & user guidance")] = new("Longevity", "Care instructions & user guidance", 0.10m, false, 8m, 4m, null)
+            [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.40m, false, 8m, 4m, null),
+            [Key("Longevity", "Repairability & Repair Services")] = new("Longevity", "Repairability & Repair Services", 0.30m, false, 8m, 4m, null),
+            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.20m, false, 8m, 4m, null),
+            [Key("Longevity", "Care Instructions & User Guidance")] = new("Longevity", "Care Instructions & User Guidance", 0.10m, false, 8m, 4m, null)
         };
 
     public static void ApplyScores(ClothingBrand brand)
@@ -68,9 +68,9 @@ public static class BrandScoreCalculator
 
         if (weightSum > 0m)
         {
-            var weightedAverage = weightedTotal / weightSum;
-            var completenessPenalty = 0.55m + (0.45m * coverageRatio);
-            brand.SustainabilityScore = RoundToOneDecimal(Clamp(weightedAverage * completenessPenalty, 1m, 10m));
+            // Category scores are computed on a 0-100 scale; convert final score to 1-10.
+            var weightedAverage100 = weightedTotal / weightSum;
+            brand.SustainabilityScore = RoundToOneDecimal(Clamp(weightedAverage100 / 10m, 1m, 10m));
         }
         else
         {
@@ -167,11 +167,11 @@ public static class BrandScoreCalculator
             weightSum += item.Weight;
 
             var reason = BuildReason(item);
-            if (itemScore >= 7m)
+            if (itemScore >= 75m)
             {
                 pros.Add($"{item.Name}: {reason}");
             }
-            else if (itemScore <= 4m)
+            else if (itemScore <= 40m)
             {
                 cons.Add($"{item.Name}: {reason}");
             }
@@ -198,30 +198,64 @@ public static class BrandScoreCalculator
 
         if (item.LowerIsBetter)
         {
-            if (good.HasValue && value <= good.Value)
+            if (good.HasValue && warning.HasValue && good.Value != warning.Value)
             {
-                return 10m;
+                if (value <= good.Value)
+                {
+                    return 100m;
+                }
+
+                if (value >= warning.Value)
+                {
+                    return 30m;
+                }
+
+                // Linear interpolation between 100 (good) and 30 (warning)
+                var progress = (value - good.Value) / (warning.Value - good.Value);
+                return RoundToOneDecimal(100m - (progress * 70m));
             }
 
-            if (warning.HasValue && value <= warning.Value)
+            if (good.HasValue)
             {
-                return 7m;
+                return value <= good.Value ? 100m : 30m;
             }
 
-            return 3m;
+            if (warning.HasValue)
+            {
+                return value <= warning.Value ? 70m : 30m;
+            }
+
+            return Clamp(value, 0m, 100m);
         }
 
-        if (good.HasValue && value >= good.Value)
+        if (good.HasValue && warning.HasValue && good.Value != warning.Value)
         {
-            return 10m;
+            if (value >= good.Value)
+            {
+                return 100m;
+            }
+
+            if (value <= warning.Value)
+            {
+                return 30m;
+            }
+
+            // Linear interpolation between 30 (warning) and 100 (good)
+            var progress = (value - warning.Value) / (good.Value - warning.Value);
+            return RoundToOneDecimal(30m + (progress * 70m));
         }
 
-        if (warning.HasValue && value >= warning.Value)
+        if (good.HasValue)
         {
-            return 7m;
+            return value >= good.Value ? 100m : 30m;
         }
 
-        return 3m;
+        if (warning.HasValue)
+        {
+            return value >= warning.Value ? 70m : 30m;
+        }
+
+        return Clamp(value, 0m, 100m);
     }
 
     private static string BuildReason(BrandCriterionItem item)

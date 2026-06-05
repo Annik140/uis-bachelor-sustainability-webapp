@@ -72,76 +72,105 @@ const createEmptyBrand = (): Brand => ({
 
 const DEFAULT_CRITERIA: CriterionDefinition[] = [
   // Material
-  { category: 'Material', name: 'Fiber provenance', inputKind: 'select', options: [
-    { label: 'No traceability', value: 0 },
-    { label: 'Partial traceability', value: 5 },
-    { label: 'Full traceability', value: 10 }
+  { category: 'Material', name: 'Fiber traceability', inputKind: 'select', options: [
+    { label: 'No disclosure', value: 0 },
+    { label: 'General supplier disclosure', value: 25 },
+    { label: 'Tier 1 supplier traceability', value: 50 },
+    { label: 'Tier 1–2 traceability', value: 75 },
+    { label: 'Tier 1–4 / farm-level traceability', value: 100 }
   ] },
-  { category: 'Material', name: 'Material toxicity & chemical management', inputKind: 'select', options: [
-    { label: 'No clear policy', value: 0 },
-    { label: 'Basic policy', value: 5 },
-    { label: 'Strong third-party verified policy', value: 10 }
+  { category: 'Material', name: 'Chemical management', inputKind: 'select', options: [
+    { label: 'No disclosure', value: 0 },
+    { label: 'Chemical policy only', value: 25 },
+    { label: 'Restricted Substance List (RSL) or testing program', value: 50 },
+    { label: 'Uses recognized standards (ZDHC, bluesign, OEKO-TEX)', value: 75 },
+    { label: 'Verified chemical management with public results/progress', value: 100 }
   ] },
-  { category: 'Material', name: 'Recycled / regenerative content', inputKind: 'number' },
-  { category: 'Material', name: 'Certifications & standards', inputKind: 'select', options: [
+  { category: 'Material', name: 'Recycled content / Preferred material content', inputKind: 'number' },
+  { category: 'Material', name: 'Certifications', inputKind: 'select', options: [
     { label: 'None', value: 0 },
-    { label: 'One credible certification', value: 5 },
-    { label: 'Multiple credible certifications', value: 10 }
+    { label: 'One relevant third-party certification', value: 35 },
+    { label: 'Multiple relevant certifications', value: 70 },
+    { label: 'Multiple certifications with broad coverage', value: 100 }
   ] },
   // Labor
-  { category: 'Labor', name: 'Living wage coverage', inputKind: 'number' },
+  { category: 'Labor', name: 'Living wage commitment & coverage', inputKind: 'select', options: [
+    { label: 'No disclosure', value: 0 },
+    { label: 'Commitment only', value: 25 },
+    { label: 'Pilot programs', value: 50 },
+    { label: 'Partial documented coverage', value: 75 },
+    { label: 'Majority coverage', value: 100 }
+  ] },
   { category: 'Labor', name: 'Worker safety & working hours', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Partial evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+    { label: 'No disclosure', value: 0 },
+    { label: 'Basic policy', value: 25 },
+    { label: 'Audits conducted', value: 50 },
+    { label: 'Performance metrics reported', value: 75 },
+    { label: 'Strong verified safety performance', value: 100 }
   ] },
   { category: 'Labor', name: 'Freedom of association / grievance mechanisms', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Partial evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+    { label: 'No disclosure', value: 0 },
+    { label: 'Policy commitment only', value: 25 },
+    { label: 'Grievance mechanism OR freedom of association policy disclosed', value: 50 },
+    { label: 'Both grievance mechanism and freedom of association policy disclosed', value: 75 },
+    { label: 'Evidence of usage, worker engagement, outcomes, or remediation reported', value: 100 }
   ] },
   { category: 'Labor', name: 'Supplier audit transparency', inputKind: 'select', options: [
-    { label: 'No public audits', value: 0 },
-    { label: 'Some audit visibility', value: 5 },
-    { label: 'Clear public audit reporting', value: 10 }
+    { label: 'No disclosure', value: 0 },
+    { label: 'States audits are conducted', value: 25 },
+    { label: 'Describes audit process/frequency', value: 50 },
+    { label: 'Publishes audit statistics or findings', value: 75 },
+    { label: 'Publishes supplier lists, findings, corrective actions, and follow-up results', value: 100 }
   ] },
   // Carbon
-  { category: 'Carbon', name: 'Measured footprint (Scope 1–3)', inputKind: 'select', options: [
-    { label: 'Not measured', value: 0 },
-    { label: 'Partial measurement', value: 5 },
-    { label: 'Full measurement', value: 10 }
+  { category: 'Carbon', name: 'Scope 1-3 measurement', inputKind: 'select', options: [
+    { label: 'No emissions reporting', value: 0 },
+    { label: 'Scope 1 only reported', value: 25 },
+    { label: 'Scope 1-2 reported', value: 50 },
+    { label: 'Scope 1-3 reported', value: 75 },
+    { label: 'Scope 1-3 reported with methodology and historical comparison', value: 100 }
   ] },
   { category: 'Carbon', name: 'Reduction targets & progress', inputKind: 'select', options: [
-    { label: 'No target', value: 0 },
-    { label: 'Target set', value: 5 },
-    { label: 'Target plus visible progress', value: 10 }
+    { label: 'No targets disclosed', value: 0 },
+    { label: 'General climate commitment', value: 25 },
+    { label: 'Quantified emissions reduction targets', value: 50 },
+    { label: 'Science-based targets (e.g. SBTi approved)', value: 75 },
+    { label: 'Science-based targets with demonstrated progress toward targets', value: 100 }
   ] },
-  { category: 'Carbon', name: 'Energy sourcing (% renewable)', inputKind: 'number' },
-  { category: 'Carbon', name: 'Transport & logistics efficiency', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Some evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+  { category: 'Carbon', name: 'Renewable energy', inputKind: 'number' },
+  { category: 'Carbon', name: 'Transport & logistics', inputKind: 'select', options: [
+    { label: 'No disclosure', value: 0 },
+    { label: 'General efficiency initiatives mentioned', value: 25 },
+    { label: 'Specific actions disclosed (route optimization, lower-carbon transport, etc.)', value: 50 },
+    { label: 'Comprehensive logistics strategy with measurable targets', value: 75 },
+    { label: 'Comprehensive strategy with demonstrated results and progress', value: 100 }
   ] },
   // Longevity
-  { category: 'Longevity', name: 'Durability testing / expected lifetime', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Partial evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+  { category: 'Longevity', name: 'Durability Testing / Expected Lifetime', inputKind: 'select', options: [
+    { label: 'No disclosure', value: 0 },
+    { label: 'General durability claims', value: 25 },
+    { label: 'Internal testing reported', value: 50 },
+    { label: 'Standardized testing disclosed', value: 75 },
+    { label: 'Standardized testing + results reported', value: 100 }
   ] },
-  { category: 'Longevity', name: 'Repairability & spare parts', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Partial evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+  { category: 'Longevity', name: 'Repairability & Repair Services', inputKind: 'select', options: [
+    { label: 'No repair support', value: 0 },
+    { label: 'Basic repair information', value: 25 },
+    { label: 'Repair guidance available', value: 50 },
+    { label: 'Repair services offered', value: 75 },
+    { label: 'Comprehensive repair ecosystem', value: 100 }
   ] },
-  { category: 'Longevity', name: 'Design for timelessness / modularity', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Partial evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+  { category: 'Longevity', name: 'Circularity Programs', inputKind: 'select', options: [
+    { label: 'No programs', value: 0 },
+    { label: 'General commitment', value: 25 },
+    { label: 'One active program', value: 50 },
+    { label: 'Multiple active programs', value: 75 },
+    { label: 'Multiple programs + measurable results', value: 100 }
   ] },
-  { category: 'Longevity', name: 'Care instructions & user guidance', inputKind: 'select', options: [
-    { label: 'No evidence', value: 0 },
-    { label: 'Partial evidence', value: 5 },
-    { label: 'Clear evidence', value: 10 }
+  { category: 'Longevity', name: 'Care Instructions & User Guidance', inputKind: 'select', options: [
+    { label: 'No guidance', value: 0 },
+    { label: 'Standard care instructions', value: 50 },
+    { label: 'Extended longevity guidance', value: 100 }
   ] }
 ]
 
@@ -318,13 +347,16 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
                     {def.inputKind === 'number' ? (
                       <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
+                        type="text"
+                        inputMode="decimal"
                         value={inputValue}
-                        onChange={e => updateNumericValue(e.target.value)}
-                        placeholder="Enter % or value"
+                        onChange={e => {
+                          const raw = e.target.value
+                          if (raw === '' || /^\d*(?:[.,]\d*)?$/.test(raw)) {
+                            updateNumericValue(raw.replace(',', '.'))
+                          }
+                        }}
+                        placeholder="Enter %"
                       />
                     ) : (
                       <select
