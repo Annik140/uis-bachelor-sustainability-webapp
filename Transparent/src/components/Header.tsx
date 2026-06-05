@@ -15,7 +15,7 @@ export default function Header() {
       <div className="header-content">
         <h1 className="header-title">Transparent</h1>
         <p className="header-subtitle">
-          A curated database documenting the sustainability practices of fashion brands. Search, discover, and make informed choices.
+          A curated database documenting the sustainability practices of fashion brands. Entries represent the clothing brand (manufacturer) and scores reflect their production practices. Search, discover, and make informed choices.
         </p>
 
         <form className="search-form" onSubmit={handleSearch}>
