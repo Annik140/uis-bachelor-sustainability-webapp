@@ -75,7 +75,10 @@ public class Program
             app.MapOpenApi();
         }
 
-        app.UseHttpsRedirection();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -141,10 +144,6 @@ public class Program
             {
                 BrandName = input.BrandName,
                 Category = input.Category,
-                PrimarySourceTitle = input.PrimarySourceTitle,
-                PrimarySourceUrl = input.PrimarySourceUrl,
-                PrimarySourcePublishedAtUtc = input.PrimarySourcePublishedAtUtc,
-                EvidenceSummary = input.EvidenceSummary,
                 MaterialSustainabilityScore = input.MaterialSustainabilityScore,
                 LaborPracticesScore = input.LaborPracticesScore,
                 CarbonFootprintScore = input.CarbonFootprintScore,
@@ -168,14 +167,11 @@ public class Program
         {
             var existing = await db.ClothingBrands
                 .Include(b => b.EvidenceSources)
+                .Include(b => b.CriteriaItems)
                 .FirstOrDefaultAsync(b => b.Id == id);
             if (existing is null) return Results.NotFound();
             existing.BrandName = input.BrandName;
             existing.Category = input.Category;
-            existing.PrimarySourceTitle = input.PrimarySourceTitle;
-            existing.PrimarySourceUrl = input.PrimarySourceUrl;
-            existing.PrimarySourcePublishedAtUtc = input.PrimarySourcePublishedAtUtc;
-            existing.EvidenceSummary = input.EvidenceSummary;
             existing.MaterialSustainabilityScore = input.MaterialSustainabilityScore;
             existing.LaborPracticesScore = input.LaborPracticesScore;
             existing.CarbonFootprintScore = input.CarbonFootprintScore;
@@ -222,7 +218,6 @@ public class Program
             }
 
             target.EvidenceSourceCount = Math.Max(target.EvidenceSourceCount, target.EvidenceSources.Count);
-            target.EvidenceSummary = BuildEvidenceSummary(target);
         }
 
         static void AddCriteriaItems(ClothingBrand target, ClothingBrand input)
@@ -240,9 +235,6 @@ public class Program
                     Name = criterion.Name.Trim(),
                     NumericValue = criterion.NumericValue,
                     Unit = criterion.Unit?.Trim(),
-                    GoodThreshold = criterion.GoodThreshold,
-                    WarningThreshold = criterion.WarningThreshold,
-                    LowerIsBetter = criterion.LowerIsBetter,
                     Weight = criterion.Weight,
                     Notes = criterion.Notes?.Trim(),
                     CreatedAtUtc = DateTime.UtcNow
@@ -250,21 +242,6 @@ public class Program
             }
 
             BrandScoreCalculator.NormalizeCriteria(target);
-        }
-
-        static string? BuildEvidenceSummary(ClothingBrand target)
-        {
-            if (target.EvidenceSources.Count == 0)
-            {
-                return null;
-            }
-
-            var sourceTitles = target.EvidenceSources
-                .Take(3)
-                .Select(source => source.SourceTitle)
-                .ToArray();
-
-            return $"Evidence from {target.EvidenceSources.Count} source(s): {string.Join(", ", sourceTitles)}";
         }
     }
 }

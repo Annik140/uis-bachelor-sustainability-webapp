@@ -15,9 +15,6 @@ type CriterionItem = {
   name: string
   numericValue?: number
   unit?: string
-  goodThreshold?: number
-  warningThreshold?: number
-  lowerIsBetter: boolean
   weight: number
   notes?: string
 }
@@ -62,9 +59,6 @@ const createEmptyBrand = (): Brand => ({
     name: c.name,
     numericValue: undefined,
     unit: '',
-    goodThreshold: undefined,
-    warningThreshold: undefined,
-    lowerIsBetter: true,
     weight: 1,
     notes: ''
   })),
@@ -178,6 +172,9 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   const [form, setForm] = useState<Brand>(createEmptyBrand())
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(mode === 'edit')
+  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false)
+  const [editingSourceIndex, setEditingSourceIndex] = useState<number | null>(null)
+  const [sourceInput, setSourceInput] = useState('')
 
   const title = mode === 'create' ? 'Add new brand' : 'Edit brand'
   const subtitle = mode === 'create'
@@ -210,9 +207,6 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
               name: def.name,
               numericValue: undefined,
               unit: '',
-              goodThreshold: undefined,
-              warningThreshold: undefined,
-              lowerIsBetter: true,
               weight: 1,
               notes: ''
             }
@@ -237,19 +231,62 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     setForm({ ...form, ...patch })
   }
 
-  function addEvidenceSource() {
-    updateBrand({
-      evidenceSources: [
-        ...(form.evidenceSources ?? []),
-        { sourceTitle: '', sourceUrl: '', sourceType: '', notes: '' }
-      ]
-    })
+  function isWebLink(value: string) {
+    if (!value) return false
+    try {
+      const url = new URL(value)
+      return url.protocol === 'http:' || url.protocol === 'https:'
+    } catch {
+      return false
+    }
   }
 
-  function updateEvidenceSource(index: number, patch: Partial<EvidenceSource>) {
+  function openAddSourceModal() {
+    setEditingSourceIndex(null)
+    setSourceInput('')
+    setIsSourceModalOpen(true)
+  }
+
+  function openEditSourceModal(index: number) {
+    const source = (form.evidenceSources ?? [])[index]
+    if (!source) return
+    setEditingSourceIndex(index)
+    setSourceInput(source.sourceTitle || source.sourceUrl || '')
+    setIsSourceModalOpen(true)
+  }
+
+  function saveSourceFromModal() {
+    const value = sourceInput.trim()
+    if (!value) return
+
+    const sourceRecord: EvidenceSource = {
+      sourceTitle: value,
+      // Keep backend compatibility (SourceUrl required) while only linking valid web URLs.
+      sourceUrl: isWebLink(value) ? value : value,
+      sourceType: '',
+      notes: ''
+    }
+
     const evidenceSources = [...(form.evidenceSources ?? [])]
-    evidenceSources[index] = { ...evidenceSources[index], ...patch }
+    if (editingSourceIndex === null) {
+      evidenceSources.push(sourceRecord)
+    } else {
+      evidenceSources[editingSourceIndex] = {
+        ...evidenceSources[editingSourceIndex],
+        ...sourceRecord
+      }
+    }
+
     updateBrand({ evidenceSources })
+    setIsSourceModalOpen(false)
+    setEditingSourceIndex(null)
+    setSourceInput('')
+  }
+
+  function closeSourceModal() {
+    setIsSourceModalOpen(false)
+    setEditingSourceIndex(null)
+    setSourceInput('')
   }
 
   function removeEvidenceSource(index: number) {
@@ -285,13 +322,47 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           })
 
       if (response.ok) {
+        if (mode === 'create') {
+          const createdBrand = await response.json().catch(() => null)
+          if (!createdBrand?.id) {
+            setError('Brand creation did not return a saved brand. Please try again.')
+            return
+          }
+
+          window.location.href = `/admin/dashboard?created=${createdBrand.id}`
+          return
+        }
+
         window.location.href = '/admin/dashboard'
         return
       }
 
-      setError('Failed to save brand')
+      const contentType = response.headers.get('content-type') ?? ''
+      let details = ''
+
+      try {
+        if (contentType.includes('application/json')) {
+          const data = await response.json()
+          details = data?.detail ?? data?.title ?? data?.message ?? JSON.stringify(data)
+        } else {
+          details = (await response.text()).trim()
+        }
+      } catch {
+        details = ''
+      }
+
+      if (response.status === 401) {
+        setError('Unauthorized: admin session expired. Please log in again.')
+        return
+      }
+
+      if (details) {
+        setError(`Failed to save brand (${response.status}): ${details}`)
+      } else {
+        setError(`Failed to save brand (${response.status})`)
+      }
     } catch {
-      setError('Network error')
+      setError('Network error: backend may not be running or reachable.')
     }
   }
 
@@ -379,28 +450,27 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
         <section>
           <h3>Evidence sources</h3>
-          <button type="button" onClick={addEvidenceSource}>Add source</button>
-          {(form.evidenceSources ?? []).map((source, index) => (
-            <div key={index} style={{ marginTop: 12, padding: 12, border: '1px solid #ddd', borderRadius: 10 }}>
-              <div>
-                <label>Source title</label>
-                <input value={source.sourceTitle} onChange={e => updateEvidenceSource(index, { sourceTitle: e.target.value })} />
-              </div>
-              <div>
-                <label>Source URL</label>
-                <input value={source.sourceUrl} onChange={e => updateEvidenceSource(index, { sourceUrl: e.target.value })} />
-              </div>
-              <div>
-                <label>Source type</label>
-                <input value={source.sourceType ?? ''} onChange={e => updateEvidenceSource(index, { sourceType: e.target.value })} />
-              </div>
-              <div>
-                <label>Notes</label>
-                <textarea value={source.notes ?? ''} onChange={e => updateEvidenceSource(index, { notes: e.target.value })} />
-              </div>
-              <button type="button" onClick={() => removeEvidenceSource(index)}>Remove source</button>
-            </div>
-          ))}
+          <button type="button" onClick={openAddSourceModal}>Add source</button>
+
+          {(form.evidenceSources ?? []).length === 0 ? (
+            <p style={{ color: '#777', marginTop: 10 }}>No sources added yet.</p>
+          ) : (
+            <ul style={{ marginTop: 12, paddingLeft: 18 }}>
+              {(form.evidenceSources ?? []).map((source, index) => (
+                <li key={`${source.sourceTitle}-${index}`} style={{ marginBottom: 10 }}>
+                  {isWebLink(source.sourceUrl) ? (
+                    <a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.sourceTitle}</a>
+                  ) : (
+                    <span>{source.sourceTitle}</span>
+                  )}
+                  <span style={{ marginLeft: 10 }}>
+                    <button type="button" onClick={() => openEditSourceModal(index)} style={{ marginRight: 8 }}>Edit</button>
+                    <button type="button" onClick={() => removeEvidenceSource(index)}>Delete</button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -410,6 +480,37 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           <button type="button" onClick={backToDashboard}>Cancel</button>
         </div>
       </form>
+
+      {isSourceModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.35)',
+          display: 'grid',
+          placeItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 18, width: 'min(560px, 92vw)' }}>
+            <h3 style={{ marginTop: 0 }}>{editingSourceIndex === null ? 'Add source' : 'Edit source'}</h3>
+            <label>Source</label>
+            <input
+              autoFocus
+              value={sourceInput}
+              onChange={e => setSourceInput(e.target.value)}
+              placeholder="Paste a URL or write a source name"
+            />
+            <p style={{ color: '#666', fontSize: 13, marginBottom: 0 }}>
+              Website links become clickable automatically.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+              <button type="button" onClick={closeSourceModal}>Cancel</button>
+              <button type="button" onClick={saveSourceFromModal} disabled={!sourceInput.trim()}>
+                {editingSourceIndex === null ? 'Add' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

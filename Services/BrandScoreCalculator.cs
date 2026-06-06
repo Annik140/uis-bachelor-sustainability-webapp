@@ -13,29 +13,29 @@ public static class BrandScoreCalculator
         new Dictionary<string, CriterionDefinition>(StringComparer.OrdinalIgnoreCase)
         {
             // Material
-            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, false, 8m, 4m, "%"),
-            [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.20m, false, 8m, 4m, null),
-            [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.20m, false, 50m, 20m, "%"),
-            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.15m, false, 8m, 4m, null),
-            [Key("Material", "Packaging sustainability")] = new("Material", "Packaging sustainability", 0.15m, false, 80m, 50m, "%"),
+            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, "%"),
+            [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.20m, null),
+            [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.20m, "%"),
+            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.15m, null),
+            [Key("Material", "Packaging sustainability")] = new("Material", "Packaging sustainability", 0.15m, "%"),
 
             // Labor
-            [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.35m, false, 100m, 80m, "%"),
-            [Key("Labor", "Worker safety & working hours")] = new("Labor", "Worker safety & working hours", 0.25m, false, 8m, 4m, null),
-            [Key("Labor", "Freedom of association / grievance mechanisms")] = new("Labor", "Freedom of association / grievance mechanisms", 0.20m, false, 8m, 4m, null),
-            [Key("Labor", "Supplier audit transparency")] = new("Labor", "Supplier audit transparency", 0.20m, false, 8m, 4m, null),
+            [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.35m, null),
+            [Key("Labor", "Worker safety & working hours")] = new("Labor", "Worker safety & working hours", 0.25m, null),
+            [Key("Labor", "Freedom of association / grievance mechanisms")] = new("Labor", "Freedom of association / grievance mechanisms", 0.20m, null),
+            [Key("Labor", "Supplier audit transparency")] = new("Labor", "Supplier audit transparency", 0.20m, null),
 
             // Carbon
-            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.35m, false, 8m, 4m, null),
-            [Key("Carbon", "Renewable energy")] = new("Carbon", "Renewable energy", 0.30m, false, 80m, 50m, "%"),
-            [Key("Carbon", "Transport & logistics")] = new("Carbon", "Transport & logistics", 0.20m, false, 8m, 4m, null),
-            [Key("Carbon", "Scope 1-3 measurement")] = new("Carbon", "Scope 1-3 measurement", 0.15m, true, 8m, 4m, null),
+            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.35m, null),
+            [Key("Carbon", "Renewable energy")] = new("Carbon", "Renewable energy", 0.30m, "%"),
+            [Key("Carbon", "Transport & logistics")] = new("Carbon", "Transport & logistics", 0.20m, null),
+            [Key("Carbon", "Scope 1-3 measurement")] = new("Carbon", "Scope 1-3 measurement", 0.15m, null),
 
             // Longevity
-            [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.40m, false, 8m, 4m, null),
-            [Key("Longevity", "Repairability & Repair Services")] = new("Longevity", "Repairability & Repair Services", 0.30m, false, 8m, 4m, null),
-            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.20m, false, 8m, 4m, null),
-            [Key("Longevity", "Care Instructions & User Guidance")] = new("Longevity", "Care Instructions & User Guidance", 0.10m, false, 8m, 4m, null)
+            [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.40m, null),
+            [Key("Longevity", "Repairability & Repair Services")] = new("Longevity", "Repairability & Repair Services", 0.30m, null),
+            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.20m, null),
+            [Key("Longevity", "Care Instructions & User Guidance")] = new("Longevity", "Care Instructions & User Guidance", 0.10m, null)
         };
 
     public static void ApplyScores(ClothingBrand brand)
@@ -102,22 +102,11 @@ public static class BrandScoreCalculator
             if (definition is not null)
             {
                 item.Weight = definition.Value.Weight;
-                item.LowerIsBetter = definition.Value.LowerIsBetter;
-                item.GoodThreshold = definition.Value.GoodThreshold;
-                item.WarningThreshold = definition.Value.WarningThreshold;
                 item.Unit = definition.Value.Unit ?? item.Unit;
             }
             else
             {
                 item.Weight = Clamp(item.Weight, 0.1m, 10m);
-                if (item.GoodThreshold.HasValue)
-                {
-                    item.GoodThreshold = RoundToOneDecimal(item.GoodThreshold.Value);
-                }
-                if (item.WarningThreshold.HasValue)
-                {
-                    item.WarningThreshold = RoundToOneDecimal(item.WarningThreshold.Value);
-                }
             }
 
             if (item.NumericValue.HasValue)
@@ -192,70 +181,7 @@ public static class BrandScoreCalculator
             return null;
         }
 
-        var value = item.NumericValue.Value;
-        var good = item.GoodThreshold;
-        var warning = item.WarningThreshold;
-
-        if (item.LowerIsBetter)
-        {
-            if (good.HasValue && warning.HasValue && good.Value != warning.Value)
-            {
-                if (value <= good.Value)
-                {
-                    return 100m;
-                }
-
-                if (value >= warning.Value)
-                {
-                    return 30m;
-                }
-
-                // Linear interpolation between 100 (good) and 30 (warning)
-                var progress = (value - good.Value) / (warning.Value - good.Value);
-                return RoundToOneDecimal(100m - (progress * 70m));
-            }
-
-            if (good.HasValue)
-            {
-                return value <= good.Value ? 100m : 30m;
-            }
-
-            if (warning.HasValue)
-            {
-                return value <= warning.Value ? 70m : 30m;
-            }
-
-            return Clamp(value, 0m, 100m);
-        }
-
-        if (good.HasValue && warning.HasValue && good.Value != warning.Value)
-        {
-            if (value >= good.Value)
-            {
-                return 100m;
-            }
-
-            if (value <= warning.Value)
-            {
-                return 30m;
-            }
-
-            // Linear interpolation between 30 (warning) and 100 (good)
-            var progress = (value - warning.Value) / (good.Value - warning.Value);
-            return RoundToOneDecimal(30m + (progress * 70m));
-        }
-
-        if (good.HasValue)
-        {
-            return value >= good.Value ? 100m : 30m;
-        }
-
-        if (warning.HasValue)
-        {
-            return value >= warning.Value ? 70m : 30m;
-        }
-
-        return Clamp(value, 0m, 100m);
+        return Clamp(item.NumericValue.Value, 0m, 100m);
     }
 
     private static string BuildReason(BrandCriterionItem item)
@@ -266,36 +192,7 @@ public static class BrandScoreCalculator
         }
 
         var unit = string.IsNullOrWhiteSpace(item.Unit) ? string.Empty : $" {item.Unit}";
-        var value = item.NumericValue.Value.ToString("0.0");
-        var good = item.GoodThreshold.HasValue ? item.GoodThreshold.Value.ToString("0.0") : null;
-        var warning = item.WarningThreshold.HasValue ? item.WarningThreshold.Value.ToString("0.0") : null;
-
-        if (item.LowerIsBetter)
-        {
-            if (good is not null && item.NumericValue.Value <= item.GoodThreshold!.Value)
-            {
-                return $"{value}{unit} is at or below the best threshold ({good}{unit}).";
-            }
-
-            if (warning is not null && item.NumericValue.Value <= item.WarningThreshold!.Value)
-            {
-                return $"{value}{unit} is between the best threshold ({good}{unit}) and the warning threshold ({warning}{unit}).";
-            }
-
-            return $"{value}{unit} is above the warning threshold ({warning ?? "n/a"}{unit}).";
-        }
-
-        if (good is not null && item.NumericValue.Value >= item.GoodThreshold!.Value)
-        {
-            return $"{value}{unit} is at or above the best threshold ({good}{unit}).";
-        }
-
-        if (warning is not null && item.NumericValue.Value >= item.WarningThreshold!.Value)
-        {
-            return $"{value}{unit} is between the warning threshold ({warning}{unit}) and the best threshold ({good}{unit}).";
-        }
-
-        return $"{value}{unit} is below the warning threshold ({warning ?? "n/a"}{unit}).";
+        return $"scored {item.NumericValue.Value:0.#}/100{unit}.";
     }
 
     private static string NormalizeCategory(string category)
@@ -342,5 +239,9 @@ public static class BrandScoreCalculator
 
     private readonly record struct CategoryScoreResult(decimal? Score, decimal WeightSum);
 
-    private readonly record struct CriterionDefinition(string Category, string Name, decimal Weight, bool LowerIsBetter, decimal GoodThreshold, decimal WarningThreshold, string? Unit);
+    private readonly record struct CriterionDefinition(
+        string Category,
+        string Name,
+        decimal Weight,
+        string? Unit);
 }

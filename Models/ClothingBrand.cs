@@ -5,10 +5,6 @@ public class ClothingBrand
     public int Id { get; set; }
     public required string BrandName { get; set; }
     public string? Category { get; set; }
-    public string? PrimarySourceTitle { get; set; }
-    public string? PrimarySourceUrl { get; set; }
-    public DateTime? PrimarySourcePublishedAtUtc { get; set; }
-    public string? EvidenceSummary { get; set; }
     public string? ProsSummary { get; set; }
     public string? ConsSummary { get; set; }
     public decimal? MaterialSustainabilityScore { get; set; }

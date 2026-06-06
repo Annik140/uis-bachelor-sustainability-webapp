@@ -10,10 +10,6 @@ type Brand = {
   id: number
   brandName: string
   category?: string
-  primarySourceTitle?: string
-  primarySourceUrl?: string
-  primarySourcePublishedAtUtc?: string
-  evidenceSummary?: string
   prosSummary?: string
   consSummary?: string
   sustainabilityScore?: number
@@ -41,9 +37,6 @@ type CriterionItem = {
   name: string
   numericValue?: number
   unit?: string
-  goodThreshold?: number
-  warningThreshold?: number
-  lowerIsBetter: boolean
   weight: number
   notes?: string
 }
@@ -113,11 +106,6 @@ function App() {
                       )}
                     </div>
                   </div>
-                  {brand.primarySourceTitle && brand.primarySourceUrl && (
-                    <p>
-                      Primary source: <a href={brand.primarySourceUrl} target="_blank" rel="noreferrer">{brand.primarySourceTitle}</a>
-                    </p>
-                  )}
                   {brand.evidenceSources && brand.evidenceSources.length > 0 && (
                     <ul>
                       {brand.evidenceSources.map(source => (

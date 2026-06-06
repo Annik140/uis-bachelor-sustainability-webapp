@@ -15,9 +15,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.Property(e => e.BrandName).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Category).HasMaxLength(120);
-            entity.Property(e => e.PrimarySourceTitle).HasMaxLength(250);
-            entity.Property(e => e.PrimarySourceUrl).HasMaxLength(1000);
-            entity.Property(e => e.EvidenceSummary).HasMaxLength(500);
             entity.Property(e => e.ProsSummary).HasMaxLength(1000);
             entity.Property(e => e.ConsSummary).HasMaxLength(1000);
             entity.Property(e => e.MaterialSustainabilityScore).HasPrecision(4, 1);
@@ -56,8 +53,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.Category).HasMaxLength(80).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Unit).HasMaxLength(50);
-            entity.Property(e => e.GoodThreshold).HasPrecision(10, 2);
-            entity.Property(e => e.WarningThreshold).HasPrecision(10, 2);
             entity.Property(e => e.Weight).HasPrecision(4, 2).HasDefaultValue(1m);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("NOW()");

@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   }, [])
 
   async function fetchBrands() {
-    const res = await fetch('/brands')
+    const res = await fetch('/brands', { cache: 'no-store' })
     if (res.ok) {
       setBrands(await res.json())
     }
