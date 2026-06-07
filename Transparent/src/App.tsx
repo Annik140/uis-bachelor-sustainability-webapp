@@ -41,6 +41,13 @@ type CriterionItem = {
   notes?: string
 }
 
+function getSustainabilityColor(score?: number) {
+  if (score === undefined || score === null) return '#6b7280'
+  if (score >= 7) return '#3d9f66'
+  if (score >= 4) return '#b1843b'
+  return '#c35b5b'
+}
+
 function App() {
   const path = window.location.pathname;
   const [brands, setBrands] = useState<Brand[]>([])
@@ -77,54 +84,31 @@ function App() {
             <div className="brands-grid">
               {brands.map(brand => (
                 <article key={brand.id} className="brand-card">
-                  <h3>{brand.brandName}</h3>
-                  <p>{brand.category}</p>
-                  <p>Sustainability: {brand.sustainabilityScore?.toFixed(1) ?? 'n/a'} / 10</p>
-                  <p>Transparency: {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5</p>
-                  <small>
-                    Material {brand.materialSustainabilityScore?.toFixed(1) ?? 'n/a'} | Labor {brand.laborPracticesScore?.toFixed(1) ?? 'n/a'} | Carbon {brand.carbonFootprintScore?.toFixed(1) ?? 'n/a'} | Longevity {brand.productLongevityScore?.toFixed(1) ?? 'n/a'}
-                  </small>
-                  <div className="brand-reasoning">
-                    <div>
-                      <h4>Pros</h4>
-                      {brand.prosSummary ? (
-                        <ul>
-                          {brand.prosSummary.split('\n').filter(Boolean).map((item, index) => <li key={index}>{item}</li>)}
-                        </ul>
-                      ) : (
-                        <p>No positive reasoning added yet.</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4>Cons</h4>
-                      {brand.consSummary ? (
-                        <ul>
-                          {brand.consSummary.split('\n').filter(Boolean).map((item, index) => <li key={index}>{item}</li>)}
-                        </ul>
-                      ) : (
-                        <p>No negative reasoning added yet.</p>
-                      )}
+                  <div className="brand-card-top">
+                    <h3 className="brand-title">{brand.brandName}</h3>
+                  </div>
+
+                  <div className="brand-card-body">
+                    <p className="brand-description-preview">
+                      {brand.category ? `${brand.category} profile.` : 'Description coming soon.'}
+                    </p>
+
+                    <div className="scores-row" aria-label="Brand scores">
+                      <div className="score-chip">
+                        <p className="score-chip-label">Sustainability</p>
+                        <p className="score-chip-value" style={{ color: getSustainabilityColor(brand.sustainabilityScore) }}>
+                          {brand.sustainabilityScore?.toFixed(1) ?? 'n/a'} / 10
+                        </p>
+                      </div>
+
+                      <div className="score-chip">
+                        <p className="score-chip-label">Transparency</p>
+                        <p className="score-chip-value score-chip-value-neutral">
+                          {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  {brand.evidenceSources && brand.evidenceSources.length > 0 && (
-                    <ul>
-                      {brand.evidenceSources.map(source => (
-                        <li key={source.id}>
-                          <a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.sourceTitle}</a>
-                          {source.sourceType ? ` (${source.sourceType})` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {brand.criteriaItems && brand.criteriaItems.length > 0 && (
-                    <ul>
-                      {brand.criteriaItems.map(item => (
-                        <li key={item.id}>
-                          {item.category}: {item.name} — {item.numericValue?.toFixed(1) ?? 'n/a'} {item.unit ?? ''}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </article>
               ))}
             </div>

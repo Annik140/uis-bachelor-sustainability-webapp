@@ -11,10 +11,24 @@ export default defineConfig({
         target: 'http://localhost:5120',
         changeOrigin: true,
         secure: false,
-        // bypass GET requests (those are React routes like /admin/login, /admin/dashboard)
+        // Only bypass real frontend routes. Admin API GETs (e.g. /admin/clothingbrands)
+        // must still be proxied to the backend.
         bypass(req, _res, _opt) {
-          if (req.method === 'GET') {
-            return req.url;
+          if (req.method !== 'GET') {
+            return;
+          }
+
+          const url = req.url ?? '';
+          const isFrontendAdminRoute =
+            url === '/admin' ||
+            url === '/admin/' ||
+            url === '/admin/login' ||
+            url === '/admin/dashboard' ||
+            url === '/admin/brands/new' ||
+            /^\/admin\/brands\/\d+\/edit$/.test(url);
+
+          if (isFrontendAdminRoute) {
+            return url;
           }
         }
       },

@@ -12,19 +12,44 @@ type Brand = {
 
 export default function AdminDashboard() {
   const [brands, setBrands] = useState<Brand[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchBrands()
   }, [])
 
   async function fetchBrands() {
-    const res = await fetch('/admin/clothingbrands', { cache: 'no-store', credentials: 'include' })
-    if (res.status === 401) {
-      window.location.href = '/admin/login'
-      return
-    }
-    if (res.ok) {
-      setBrands(await res.json())
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/admin/clothingbrands', { cache: 'no-store', credentials: 'include' })
+      if (res.status === 401) {
+        window.location.href = '/admin/login'
+        return
+      }
+
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') ?? ''
+        if (contentType.includes('application/json')) {
+          setBrands(await res.json())
+          return
+        }
+      }
+
+      // Fallback: if protected read endpoint fails unexpectedly, try public read endpoint.
+      const fallback = await fetch('/brands', { cache: 'no-store' })
+      if (fallback.ok) {
+        setBrands(await fallback.json())
+        return
+      }
+
+      setError(`Could not load brands (${res.status}).`)
+    } catch {
+      setError('Could not load brands. Backend may be unavailable.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -78,9 +103,11 @@ export default function AdminDashboard() {
 
       <section>
         <h3>Created brands</h3>
-        {brands.length === 0 ? (
+        {loading && <p>Loading brands...</p>}
+        {error && <p style={{ color: '#b00020' }}>{error}</p>}
+        {!loading && !error && brands.length === 0 ? (
           <p>No brands created yet.</p>
-        ) : (
+        ) : !loading && !error ? (
           <div style={{ display: 'grid', gap: 16 }}>
             {brands.map(brand => (
               <article key={brand.id} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16, background: '#fff' }}>
@@ -95,7 +122,8 @@ export default function AdminDashboard() {
               </article>
             ))}
           </div>
-        )}
+        ) : null
+        }
       </section>
     </div>
   )
