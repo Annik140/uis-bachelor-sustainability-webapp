@@ -18,7 +18,11 @@ export default function AdminDashboard() {
   }, [])
 
   async function fetchBrands() {
-    const res = await fetch('/brands', { cache: 'no-store' })
+    const res = await fetch('/admin/clothingbrands', { cache: 'no-store', credentials: 'include' })
+    if (res.status === 401) {
+      window.location.href = '/admin/login'
+      return
+    }
     if (res.ok) {
       setBrands(await res.json())
     }
@@ -28,13 +32,28 @@ export default function AdminDashboard() {
     window.location.href = '/admin/brands/new'
   }
 
+  function handleBackToMainPage() {
+    window.location.href = '/'
+  }
+
   function handleEditBrand(id: number) {
     window.location.href = `/admin/brands/${id}/edit`
   }
 
   async function handleDelete(id: number) {
-    await fetch(`/admin/clothingbrands/${id}`, { method: 'DELETE', credentials: 'include' })
+    const response = await fetch(`/admin/clothingbrands/${id}`, { method: 'DELETE', credentials: 'include' })
+    if (response.status === 401) {
+      window.location.href = '/admin/login'
+      return
+    }
     fetchBrands()
+  }
+
+  async function handleLogout() {
+    const response = await fetch('/admin/logout', { method: 'POST', credentials: 'include' })
+    if (response.status === 401 || response.ok) {
+      window.location.href = '/admin/login'
+    }
   }
 
   return (
@@ -44,9 +63,17 @@ export default function AdminDashboard() {
           <h2>Admin Dashboard</h2>
           <p>Manage your clothing brands, criteria, and score reasoning from here.</p>
         </div>
-        <button type="button" onClick={handleAddBrand} style={{ padding: '12px 18px', fontWeight: 700 }}>
-          Add new brand
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" onClick={handleLogout} style={{ padding: '12px 18px' }}>
+            Logout
+          </button>
+          <button type="button" onClick={handleBackToMainPage} style={{ padding: '12px 18px' }}>
+            Back to main page
+          </button>
+          <button type="button" onClick={handleAddBrand} style={{ padding: '12px 18px', fontWeight: 700 }}>
+            Add new brand
+          </button>
+        </div>
       </div>
 
       <section>

@@ -99,6 +99,24 @@ public class Program
         })
         .WithName("GetBrandById");
 
+        app.MapGet("/admin/clothingbrands", async (AppDbContext db) =>
+            await db.ClothingBrands
+                .Include(x => x.EvidenceSources)
+                .Include(x => x.CriteriaItems)
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .ToListAsync())
+            .RequireAuthorization("AdminOnly");
+
+        app.MapGet("/admin/clothingbrands/{id:int}", async (int id, AppDbContext db) =>
+        {
+            var brand = await db.ClothingBrands
+                .Include(b => b.EvidenceSources)
+                .Include(b => b.CriteriaItems)
+                .FirstOrDefaultAsync(b => b.Id == id);
+            return brand is null ? Results.NotFound() : Results.Ok(brand);
+        })
+        .RequireAuthorization("AdminOnly");
+
         // Admin login endpoint, signs in cookie if credentials match env vars
         app.MapPost("/admin/login", async (HttpContext ctx) =>
         {

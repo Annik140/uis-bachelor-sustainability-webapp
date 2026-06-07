@@ -194,9 +194,19 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
       return
     }
 
-    fetch(`/brands/${brandId}`)
-      .then(response => response.ok ? response.json() : null)
+    fetch(`/admin/clothingbrands/${brandId}`, { credentials: 'include' })
+      .then(response => {
+        if (response.status === 401) {
+          window.location.href = '/admin/login'
+          return null
+        }
+
+        return response.ok ? response.json() : null
+      })
       .then(data => {
+        if (data === null) {
+          return
+        }
         if (data) {
           // Merge existing criteria with defaults so fixed subcriteria are always present
           const existing: CriterionItem[] = data.criteriaItems ?? []
@@ -321,6 +331,11 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
             body: JSON.stringify(payload)
           })
 
+        if (response.status === 401) {
+          window.location.href = '/admin/login'
+          return
+        }
+
       if (response.ok) {
         if (mode === 'create') {
           const createdBrand = await response.json().catch(() => null)
@@ -349,11 +364,6 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
         }
       } catch {
         details = ''
-      }
-
-      if (response.status === 401) {
-        setError('Unauthorized: admin session expired. Please log in again.')
-        return
       }
 
       if (details) {
