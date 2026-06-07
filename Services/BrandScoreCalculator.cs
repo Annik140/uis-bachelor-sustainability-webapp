@@ -62,7 +62,8 @@ public static class BrandScoreCalculator
         AddWeightedScore(carbon.Score, CarbonWeight, ref weightedTotal, ref weightSum);
         AddWeightedScore(longevity.Score, LongevityWeight, ref weightedTotal, ref weightSum);
 
-        var coverageCount = CountProvidedCriteria(criteriaItems);
+        // Only scoreable criteria contribute to sustainability. Empty/default selections are treated as missing data.
+        var coverageCount = CountScoreableCriteria(criteriaItems);
         var totalCriteria = Math.Max(criteriaItems.Count, 1);
         var coverageRatio = coverageCount / (decimal)totalCriteria;
 
@@ -127,7 +128,7 @@ public static class BrandScoreCalculator
         weightSum += weight;
     }
 
-    private static int CountProvidedCriteria(IEnumerable<BrandCriterionItem> criteriaItems)
+    private static int CountScoreableCriteria(IEnumerable<BrandCriterionItem> criteriaItems)
     {
         return criteriaItems.Count(item => item.NumericValue.HasValue);
     }
@@ -148,7 +149,6 @@ public static class BrandScoreCalculator
             var itemScore = ScoreCriterion(item);
             if (itemScore is null)
             {
-                cons.Add($"{item.Name}: data is missing.");
                 continue;
             }
 

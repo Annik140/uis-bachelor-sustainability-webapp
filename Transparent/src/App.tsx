@@ -56,6 +56,14 @@ function toHundredScale(scoreOutOfTen?: number) {
   return Math.min(Math.max(scoreOutOfTen * 10, 0), 100)
 }
 
+function toTransparencyPercent(scoreOutOfFive?: number) {
+  if (scoreOutOfFive === undefined || scoreOutOfFive === null) {
+    return undefined
+  }
+
+  return Math.min(Math.max(((scoreOutOfFive - 1) / 4) * 100, 0), 100)
+}
+
 function getSustainabilityColor(scoreOutOfTen?: number) {
   const score = toHundredScale(scoreOutOfTen)
   if (score === undefined || score === null) return '#6b7280'
@@ -211,6 +219,12 @@ function App() {
                         <p className="score-chip-value score-chip-value-neutral">
                           {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5
                         </p>
+                        <div className="transparency-track" aria-hidden="true">
+                          <div
+                            className="transparency-fill"
+                            style={{ width: `${toTransparencyPercent(brand.transparencyScore) ?? 0}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -251,6 +265,12 @@ function App() {
                       {selectedBrand.transparencyScore?.toFixed(1) ?? 'n/a'}
                     </p>
                     <p className="hero-score-unit">/ 5</p>
+                    <div className="transparency-track transparency-track-hero" aria-hidden="true">
+                      <div
+                        className="transparency-fill"
+                        style={{ width: `${toTransparencyPercent(selectedBrand.transparencyScore) ?? 0}%` }}
+                      />
+                    </div>
                   </div>
                 </section>
 

@@ -141,14 +141,14 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
   ] },
   // Carbon
   { category: 'Carbon', name: 'Scope 1-3 measurement', inputKind: 'select', options: [
-    { label: 'No emissions reporting', value: 0 },
+    { label: 'No Scope 1-3 measurement', value: 0 },
     { label: 'Scope 1 only reported', value: 25 },
     { label: 'Scope 1-2 reported', value: 50 },
     { label: 'Scope 1-3 reported', value: 75 },
     { label: 'Scope 1-3 reported with methodology and historical comparison', value: 100 }
   ] },
   { category: 'Carbon', name: 'Reduction targets & progress', inputKind: 'select', options: [
-    { label: 'No reduction targets disclosed', value: 0 },
+    { label: 'No reduction targets', value: 0 },
     { label: 'General climate commitment', value: 25 },
     { label: 'Quantified emissions reduction targets', value: 50 },
     { label: 'Science-based targets (e.g. SBTi approved)', value: 75 },
