@@ -90,14 +90,14 @@ const createEmptyBrand = (): Brand => ({
 const DEFAULT_CRITERIA: CriterionDefinition[] = [
   // Material
   { category: 'Material', name: 'Fiber traceability', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No fiber traceability', value: 0 },
     { label: 'General supplier disclosure', value: 25 },
     { label: 'Tier 1 supplier traceability', value: 50 },
     { label: 'Tier 1–2 traceability', value: 75 },
     { label: 'Tier 1–4 / farm-level traceability', value: 100 }
   ] },
   { category: 'Material', name: 'Chemical management', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No chemical management disclosure', value: 0 },
     { label: 'Chemical policy only', value: 25 },
     { label: 'Restricted Substance List (RSL) or testing program', value: 50 },
     { label: 'Uses recognized standards (ZDHC, bluesign, OEKO-TEX)', value: 75 },
@@ -112,28 +112,28 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
   ] },
   // Labor
   { category: 'Labor', name: 'Living wage commitment & coverage', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No living wage disclosure', value: 0 },
     { label: 'Commitment only', value: 25 },
     { label: 'Pilot programs', value: 50 },
     { label: 'Partial documented coverage', value: 75 },
     { label: 'Majority coverage', value: 100 }
   ] },
   { category: 'Labor', name: 'Worker safety & working hours', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No worker safety disclosure', value: 0 },
     { label: 'Basic policy', value: 25 },
     { label: 'Audits conducted', value: 50 },
     { label: 'Performance metrics reported', value: 75 },
     { label: 'Strong verified safety performance', value: 100 }
   ] },
   { category: 'Labor', name: 'Freedom of association / grievance mechanisms', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No grievance mechanism or FOA disclosure', value: 0 },
     { label: 'Policy commitment only', value: 25 },
     { label: 'Grievance mechanism OR freedom of association policy disclosed', value: 50 },
     { label: 'Both grievance mechanism and freedom of association policy disclosed', value: 75 },
     { label: 'Evidence of usage, worker engagement, outcomes, or remediation reported', value: 100 }
   ] },
   { category: 'Labor', name: 'Supplier audit transparency', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No supplier audit disclosure', value: 0 },
     { label: 'States audits are conducted', value: 25 },
     { label: 'Describes audit process/frequency', value: 50 },
     { label: 'Publishes audit statistics or findings', value: 75 },
@@ -148,7 +148,7 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
     { label: 'Scope 1-3 reported with methodology and historical comparison', value: 100 }
   ] },
   { category: 'Carbon', name: 'Reduction targets & progress', inputKind: 'select', options: [
-    { label: 'No targets disclosed', value: 0 },
+    { label: 'No reduction targets disclosed', value: 0 },
     { label: 'General climate commitment', value: 25 },
     { label: 'Quantified emissions reduction targets', value: 50 },
     { label: 'Science-based targets (e.g. SBTi approved)', value: 75 },
@@ -156,7 +156,7 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
   ] },
   { category: 'Carbon', name: 'Renewable energy', inputKind: 'number' },
   { category: 'Carbon', name: 'Transport & logistics', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No transport disclosure', value: 0 },
     { label: 'General efficiency initiatives mentioned', value: 25 },
     { label: 'Specific actions disclosed (route optimization, lower-carbon transport, etc.)', value: 50 },
     { label: 'Comprehensive logistics strategy with measurable targets', value: 75 },
@@ -164,7 +164,7 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
   ] },
   // Longevity
   { category: 'Longevity', name: 'Durability Testing / Expected Lifetime', inputKind: 'select', options: [
-    { label: 'No disclosure', value: 0 },
+    { label: 'No durability or testing disclosure', value: 0 },
     { label: 'General durability claims', value: 25 },
     { label: 'Internal testing reported', value: 50 },
     { label: 'Standardized testing disclosed', value: 75 },
@@ -484,7 +484,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                         value={inputValue}
                         onChange={e => updateNumericValue(e.target.value)}
                       >
-                        <option value="">Select one</option>
+                        <option value="">Information not found</option>
                         {def.options?.map(option => (
                           <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
