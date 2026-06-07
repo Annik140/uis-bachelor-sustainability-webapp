@@ -61,7 +61,7 @@ function toTransparencyPercent(scoreOutOfFive?: number) {
     return undefined
   }
 
-  return Math.min(Math.max(((scoreOutOfFive - 1) / 4) * 100, 0), 100)
+  return Math.min(Math.max((scoreOutOfFive / 5) * 100, 0), 100)
 }
 
 function getSustainabilityColor(scoreOutOfTen?: number) {

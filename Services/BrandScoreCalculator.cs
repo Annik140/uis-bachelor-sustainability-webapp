@@ -78,8 +78,8 @@ public static class BrandScoreCalculator
             brand.SustainabilityScore = null;
         }
 
-        var transparency = 1m + (coverageRatio * 4m);
-        brand.TransparencyScore = RoundToOneDecimal(Clamp(transparency, 1m, 5m));
+        var transparency = coverageRatio * 5m;
+        brand.TransparencyScore = RoundToOneDecimal(Clamp(transparency, 0m, 5m));
         brand.ProsSummary = BuildSummary(pros);
         brand.ConsSummary = BuildSummary(cons);
         brand.UpdatedAtUtc = DateTime.UtcNow;
