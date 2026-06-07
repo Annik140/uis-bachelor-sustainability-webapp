@@ -1,13 +1,22 @@
-import { useState } from 'react'
 import './Header.css'
 
-export default function Header() {
-  const [searchQuery, setSearchQuery] = useState('')
+type HeaderProps = {
+  searchQuery: string
+  onSearchQueryChange: (value: string) => void
+  brandCount: number
+  averageSustainability?: number
+  dataCoverage?: number
+}
 
+export default function Header({
+  searchQuery,
+  onSearchQueryChange,
+  brandCount,
+  averageSustainability,
+  dataCoverage,
+}: HeaderProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement search functionality
-    console.log('Search:', searchQuery)
   }
 
   return (
@@ -24,22 +33,22 @@ export default function Header() {
             className="search-input"
             placeholder="Search brands..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
           />
         </form>
 
         <div className="stats-container">
           <div className="stat">
-            <div className="stat-number">8</div>
+            <div className="stat-number">{brandCount}</div>
             <div className="stat-label">BRANDS</div>
           </div>
           <div className="stat">
-            <div className="stat-number">86</div>
+            <div className="stat-number">{averageSustainability?.toFixed(0) ?? 'n/a'}</div>
             <div className="stat-label">AVG SCORE</div>
           </div>
           <div className="stat">
-            <div className="stat-number">28</div>
-            <div className="stat-label">CERTIFICATIONS</div>
+            <div className="stat-number">{dataCoverage?.toFixed(0) ?? 'n/a'}%</div>
+            <div className="stat-label">DATA COVERAGE</div>
           </div>
         </div>
       </div>

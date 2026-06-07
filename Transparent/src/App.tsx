@@ -81,8 +81,37 @@ function buildCriteriaByCategory(brand: Brand) {
 function App() {
   const path = window.location.pathname
   const [brands, setBrands] = useState<Brand[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const editMatch = path.match(/^\/admin\/brands\/(\d+)\/edit$/)
+
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredBrands = normalizedQuery
+    ? brands.filter(brand =>
+        brand.brandName.toLowerCase().includes(normalizedQuery) ||
+        (brand.category ?? '').toLowerCase().includes(normalizedQuery)
+      )
+    : brands
+
+  const sustainabilityValues = filteredBrands
+    .map(brand => toHundredScale(brand.sustainabilityScore))
+    .filter((value): value is number => value !== undefined)
+
+  const totalCriteriaCount = filteredBrands.reduce(
+    (sum, brand) => sum + (brand.criteriaItems?.length ?? 0),
+    0
+  )
+  const filledCriteriaCount = filteredBrands.reduce(
+    (sum, brand) => sum + (brand.criteriaItems?.filter(item => item.numericValue !== undefined && item.numericValue !== null).length ?? 0),
+    0
+  )
+
+  const averageSustainability = sustainabilityValues.length > 0
+    ? sustainabilityValues.reduce((sum, value) => sum + value, 0) / sustainabilityValues.length
+    : undefined
+  const dataCoverage = totalCriteriaCount > 0
+    ? (filledCriteriaCount / totalCriteriaCount) * 100
+    : undefined
 
   useEffect(() => {
     if (!path.startsWith('/admin')) {
@@ -124,17 +153,23 @@ function App() {
 
   return (
     <>
-      <Header />
+      <Header
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        brandCount={filteredBrands.length}
+        averageSustainability={averageSustainability}
+        dataCoverage={dataCoverage}
+      />
       
       <main className="app-main">
         <section className="brands-container">
-          {brands.length === 0 ? (
+          {filteredBrands.length === 0 ? (
             <div className="brands-placeholder">
-              <p>No brands added yet.</p>
+              <p>{brands.length === 0 ? 'No brands added yet.' : 'No brands match your search.'}</p>
             </div>
           ) : (
             <div className="brands-grid">
-              {brands.map(brand => (
+              {filteredBrands.map(brand => (
                 <article
                   key={brand.id}
                   className="brand-card"

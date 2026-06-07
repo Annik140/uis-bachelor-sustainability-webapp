@@ -21,15 +21,6 @@ export default function Footer() {
             </p>
           </div>
         </div>
-
-        <div className="footer-quote">
-          <p>"The greatest threat to our planet is the belief that someone else will save it."</p>
-          <p className="quote-author">— Robert Swan</p>
-        </div>
-
-        <div className="footer-bottom">
-          <p>DATA UPDATED JANUARY 2026</p>
-        </div>
       </div>
     </footer>
   )
