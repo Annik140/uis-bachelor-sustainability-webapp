@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ClothingBrand> ClothingBrands => Set<ClothingBrand>();
     public DbSet<BrandEvidenceSource> BrandEvidenceSources => Set<BrandEvidenceSource>();
     public DbSet<BrandCriterionItem> BrandCriterionItems => Set<BrandCriterionItem>();
+    public DbSet<BrandCertification> BrandCertifications => Set<BrandCertification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +37,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithOne(e => e.ClothingBrand)
                 .HasForeignKey(e => e.ClothingBrandId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Certifications)
+                .WithOne(e => e.ClothingBrand)
+                .HasForeignKey(e => e.ClothingBrandId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<BrandEvidenceSource>(entity =>
@@ -58,6 +64,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("NOW()");
             entity.HasIndex(e => e.ClothingBrandId);
             entity.HasIndex(e => new { e.ClothingBrandId, e.Category });
+        });
+
+        modelBuilder.Entity<BrandCertification>(entity =>
+        {
+            entity.Property(e => e.Name).HasMaxLength(120).IsRequired();
+            entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("NOW()");
+            entity.HasIndex(e => e.ClothingBrandId);
+            entity.HasIndex(e => new { e.ClothingBrandId, e.Name }).IsUnique();
         });
     }
 }

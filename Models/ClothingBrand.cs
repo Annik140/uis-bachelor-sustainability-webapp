@@ -19,4 +19,5 @@ public class ClothingBrand
 
     public ICollection<BrandEvidenceSource> EvidenceSources { get; set; } = new List<BrandEvidenceSource>();
     public ICollection<BrandCriterionItem> CriteriaItems { get; set; } = new List<BrandCriterionItem>();
+    public ICollection<BrandCertification> Certifications { get; set; } = new List<BrandCertification>();
 }

@@ -310,6 +310,20 @@ body {
   text-decoration: underline;
 }
 
+.certification-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.certification-tag {
+  border: 1px solid #d5d2cb;
+  background: #f5f3ef;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #3d3933;
+}
+
 .last-updated {
   color: #6d685f;
   font-size: 13px;

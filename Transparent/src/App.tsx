@@ -21,6 +21,7 @@ type Brand = {
   updatedAtUtc?: string
   evidenceSources?: EvidenceSource[]
   criteriaItems?: CriterionItem[]
+  certifications?: BrandCertification[]
 }
 
 type EvidenceSource = {
@@ -30,6 +31,11 @@ type EvidenceSource = {
   sourceType?: string
   publishedAtUtc?: string
   notes?: string
+}
+
+type BrandCertification = {
+  id: number
+  name: string
 }
 
 type CriterionItem = {
@@ -291,6 +297,17 @@ function App() {
                             <li key={`con-${index}`}>{item}</li>
                           ))}
                       </ul>
+                    </div>
+                  </section>
+                )}
+
+                {selectedBrand.certifications && selectedBrand.certifications.length > 0 && (
+                  <section className="modal-section">
+                    <h3>Certifications</h3>
+                    <div className="certification-tags">
+                      {selectedBrand.certifications.map(certification => (
+                        <span key={certification.id} className="certification-tag">{certification.name}</span>
+                      ))}
                     </div>
                   </section>
                 )}

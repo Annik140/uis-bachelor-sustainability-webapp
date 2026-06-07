@@ -10,6 +10,11 @@ type EvidenceSource = {
   notes?: string
 }
 
+type Certification = {
+  id?: number
+  name: string
+}
+
 type CriterionItem = {
   category: string
   name: string
@@ -39,7 +44,24 @@ type Brand = {
   evidenceSourceCount?: number
   evidenceSources?: EvidenceSource[]
   criteriaItems?: CriterionItem[]
+  certifications?: Certification[]
 }
+
+const CERTIFICATION_OPTIONS = [
+  'GOTS',
+  'GRS',
+  'OEKO-TEX',
+  'bluesign',
+  'FSC',
+  'RWS',
+  'RDS',
+  'Fair Wear Foundation',
+  'SA8000',
+  'WRAP',
+  'SBTi',
+  'RE100',
+  'B Corp',
+]
 
 const categoryLabels = [
   'Material sustainability',
@@ -54,6 +76,7 @@ const createEmptyBrand = (): Brand => ({
   brandName: '',
   evidenceSourceCount: 0,
   evidenceSources: [],
+  certifications: [],
   criteriaItems: DEFAULT_CRITERIA.map(c => ({
     category: c.category,
     name: c.name,
@@ -226,6 +249,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
             ...createEmptyBrand(),
             ...data,
             evidenceSources: data.evidenceSources ?? [],
+            certifications: data.certifications ?? [],
             criteriaItems: merged
           })
         }
@@ -303,6 +327,22 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     const evidenceSources = [...(form.evidenceSources ?? [])]
     evidenceSources.splice(index, 1)
     updateBrand({ evidenceSources })
+  }
+
+  function toggleCertification(name: string, checked: boolean) {
+    const current = [...(form.certifications ?? [])]
+
+    if (checked) {
+      if (!current.some(item => item.name.toLowerCase() === name.toLowerCase())) {
+        current.push({ name })
+      }
+    } else {
+      const next = current.filter(item => item.name.toLowerCase() !== name.toLowerCase())
+      updateBrand({ certifications: next })
+      return
+    }
+
+    updateBrand({ certifications: current })
   }
 
   function updateCriterion(index: number, patch: Partial<CriterionItem>) {
@@ -456,6 +496,44 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
               </div>
             </div>
           ))}
+        </section>
+
+        <section>
+          <h3>Certifications</h3>
+          <p>Select all certifications that apply. These are displayed on the brand page and do not affect score calculations.</p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
+            {CERTIFICATION_OPTIONS.map(certification => {
+              const isChecked = (form.certifications ?? []).some(item => item.name.toLowerCase() === certification.toLowerCase())
+              return (
+                <label
+                  key={certification}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 10px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: 8,
+                    background: '#fafafa',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={e => toggleCertification(certification, e.target.checked)}
+                  />
+                  <span>{certification}</span>
+                </label>
+              )
+            })}
+          </div>
         </section>
 
         <section>

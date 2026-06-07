@@ -86,6 +86,7 @@ public class Program
             await db.ClothingBrands
                 .Include(x => x.EvidenceSources)
                 .Include(x => x.CriteriaItems)
+                .Include(x => x.Certifications)
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .ToListAsync());
 
@@ -94,6 +95,7 @@ public class Program
             var brand = await db.ClothingBrands
                 .Include(b => b.EvidenceSources)
                 .Include(b => b.CriteriaItems)
+                .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
             return brand is null ? Results.NotFound() : Results.Ok(brand);
         })
@@ -103,6 +105,7 @@ public class Program
             await db.ClothingBrands
                 .Include(x => x.EvidenceSources)
                 .Include(x => x.CriteriaItems)
+                .Include(x => x.Certifications)
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .ToListAsync())
             .RequireAuthorization("AdminOnly");
@@ -112,6 +115,7 @@ public class Program
             var brand = await db.ClothingBrands
                 .Include(b => b.EvidenceSources)
                 .Include(b => b.CriteriaItems)
+                .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
             return brand is null ? Results.NotFound() : Results.Ok(brand);
         })
@@ -173,6 +177,7 @@ public class Program
 
             AddEvidenceSources(entity, input);
             AddCriteriaItems(entity, input);
+            AddCertifications(entity, input);
 
             BrandScoreCalculator.ApplyScores(entity);
 
@@ -186,6 +191,7 @@ public class Program
             var existing = await db.ClothingBrands
                 .Include(b => b.EvidenceSources)
                 .Include(b => b.CriteriaItems)
+                .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
             if (existing is null) return Results.NotFound();
             existing.BrandName = input.BrandName;
@@ -199,6 +205,8 @@ public class Program
             AddEvidenceSources(existing, input);
             db.BrandCriterionItems.RemoveRange(existing.CriteriaItems);
             AddCriteriaItems(existing, input);
+            db.BrandCertifications.RemoveRange(existing.Certifications);
+            AddCertifications(existing, input);
             BrandScoreCalculator.ApplyScores(existing);
             await db.SaveChangesAsync();
             return Results.Ok(existing);
@@ -260,6 +268,29 @@ public class Program
             }
 
             BrandScoreCalculator.NormalizeCriteria(target);
+        }
+
+        static void AddCertifications(ClothingBrand target, ClothingBrand input)
+        {
+            if (input.Certifications is null)
+            {
+                return;
+            }
+
+            var uniqueNames = input.Certifications
+                .Select(c => c.Name?.Trim())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var name in uniqueNames)
+            {
+                target.Certifications.Add(new BrandCertification
+                {
+                    Name = name!,
+                    CreatedAtUtc = DateTime.UtcNow
+                });
+            }
         }
     }
 }
