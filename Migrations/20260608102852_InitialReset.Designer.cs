@@ -12,8 +12,8 @@ using uis_bachelor_sustainability_webapp.Data;
 namespace uis_bachelor_sustainability_webapp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260603094326_AddBrandEvidence")]
-    partial class AddBrandEvidence
+    [Migration("20260608102852_InitialReset")]
+    partial class InitialReset
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,89 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.BrandCertification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClothingBrandId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClothingBrandId");
+
+                    b.HasIndex("ClothingBrandId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("BrandCertifications");
+                });
+
+            modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.BrandCriterionItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int>("ClothingBrandId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal?>("NumericValue")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("Weight")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(4, 2)
+                        .HasColumnType("numeric(4,2)")
+                        .HasDefaultValue(1m);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClothingBrandId");
+
+                    b.HasIndex("ClothingBrandId", "Category");
+
+                    b.ToTable("BrandCriterionItems");
+                });
 
             modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.BrandEvidenceSource", b =>
                 {
@@ -90,6 +173,10 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<string>("ConsSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -97,10 +184,6 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
-
-                    b.Property<string>("EvidenceSummary")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<decimal?>("LaborPracticesScore")
                         .HasPrecision(4, 1)
@@ -110,20 +193,13 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         .HasPrecision(4, 1)
                         .HasColumnType("numeric(4,1)");
 
-                    b.Property<DateTime?>("PrimarySourcePublishedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PrimarySourceTitle")
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
-
-                    b.Property<string>("PrimarySourceUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
                     b.Property<decimal?>("ProductLongevityScore")
                         .HasPrecision(4, 1)
                         .HasColumnType("numeric(4,1)");
+
+                    b.Property<string>("ProsSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<decimal?>("SustainabilityScore")
                         .HasPrecision(5, 2)
@@ -145,6 +221,28 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                     b.ToTable("ClothingBrands");
                 });
 
+            modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.BrandCertification", b =>
+                {
+                    b.HasOne("uis_bachelor_sustainability_webapp.Models.ClothingBrand", "ClothingBrand")
+                        .WithMany("Certifications")
+                        .HasForeignKey("ClothingBrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClothingBrand");
+                });
+
+            modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.BrandCriterionItem", b =>
+                {
+                    b.HasOne("uis_bachelor_sustainability_webapp.Models.ClothingBrand", "ClothingBrand")
+                        .WithMany("CriteriaItems")
+                        .HasForeignKey("ClothingBrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClothingBrand");
+                });
+
             modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.BrandEvidenceSource", b =>
                 {
                     b.HasOne("uis_bachelor_sustainability_webapp.Models.ClothingBrand", "ClothingBrand")
@@ -158,6 +256,10 @@ namespace uis_bachelor_sustainability_webapp.Migrations
 
             modelBuilder.Entity("uis_bachelor_sustainability_webapp.Models.ClothingBrand", b =>
                 {
+                    b.Navigation("Certifications");
+
+                    b.Navigation("CriteriaItems");
+
                     b.Navigation("EvidenceSources");
                 });
 #pragma warning restore 612, 618

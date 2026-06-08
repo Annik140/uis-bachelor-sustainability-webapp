@@ -67,6 +67,7 @@ public class Program
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
+            SeedDemoBrands(db);
         }
 
         // Configure the HTTP request pipeline.
@@ -291,6 +292,204 @@ public class Program
                     CreatedAtUtc = DateTime.UtcNow
                 });
             }
+        }
+
+        static void SeedDemoBrands(AppDbContext db)
+        {
+            if (db.ClothingBrands.Any())
+            {
+                return;
+            }
+
+            var allCriteria = GetDefaultCriteriaTemplate();
+
+            var seededBrands = new List<ClothingBrand>
+            {
+                BuildBrand(
+                    brandName: "Aurora Atelier",
+                    category: "Luxury",
+                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
+                    {
+                        ["Material:Fiber traceability"] = 95,
+                        ["Labor:Living wage commitment & coverage"] = 90,
+                        ["Carbon:Scope 1-3 measurement"] = 92,
+                        ["Longevity:Durability Testing / Expected Lifetime"] = 93,
+                    }),
+                    certifications: ["GOTS", "SBTi"],
+                    sourceTitle: "Aurora sustainability brief"
+                ),
+                BuildBrand(
+                    brandName: "Baseline Basics",
+                    category: "Fast fashion",
+                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
+                    {
+                        ["Material:Fiber traceability"] = 20,
+                        ["Material:Chemical management"] = 15,
+                        ["Material:Recycled content / Preferred material content"] = 10,
+                        ["Material:Certifications"] = 0,
+                        ["Labor:Living wage commitment & coverage"] = 25,
+                        ["Labor:Worker safety & working hours"] = 20,
+                        ["Labor:Freedom of association / grievance mechanisms"] = 15,
+                        ["Labor:Supplier audit transparency"] = 10,
+                        ["Carbon:Reduction targets & progress"] = 20,
+                        ["Carbon:Renewable energy"] = 15,
+                        ["Carbon:Transport & logistics"] = 10,
+                        ["Carbon:Scope 1-3 measurement"] = 25,
+                        ["Longevity:Durability Testing / Expected Lifetime"] = 20,
+                        ["Longevity:Repairability & Repair Services"] = 15,
+                        ["Longevity:Circularity Programs"] = 10,
+                        ["Longevity:Care Instructions & User Guidance"] = 25,
+                    }),
+                    certifications: [],
+                    sourceTitle: "Baseline annual report"
+                ),
+                BuildBrand(
+                    brandName: "Cedar Collective",
+                    category: "Outdoor",
+                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
+                    {
+                        ["Material:Fiber traceability"] = 90,
+                        ["Material:Chemical management"] = 85,
+                        ["Material:Recycled content / Preferred material content"] = 88,
+                        ["Material:Certifications"] = 90,
+                        ["Labor:Living wage commitment & coverage"] = 82,
+                        ["Labor:Worker safety & working hours"] = 86,
+                        ["Labor:Freedom of association / grievance mechanisms"] = 80,
+                        ["Labor:Supplier audit transparency"] = 84,
+                        ["Carbon:Reduction targets & progress"] = 88,
+                        ["Carbon:Renewable energy"] = 86,
+                        ["Carbon:Transport & logistics"] = 82,
+                        ["Carbon:Scope 1-3 measurement"] = 90,
+                        ["Longevity:Durability Testing / Expected Lifetime"] = 92,
+                        ["Longevity:Repairability & Repair Services"] = 85,
+                        ["Longevity:Circularity Programs"] = 80,
+                        ["Longevity:Care Instructions & User Guidance"] = 88,
+                    }),
+                    certifications: ["bluesign", "Fair Wear Foundation", "SBTi"],
+                    sourceTitle: "Cedar impact report"
+                ),
+                BuildBrand(
+                    brandName: "Dusk Discount",
+                    category: "Value retail",
+                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
+                    {
+                        ["Material:Chemical management"] = 12,
+                        ["Labor:Worker safety & working hours"] = 18,
+                        ["Carbon:Transport & logistics"] = 10,
+                        ["Longevity:Repairability & Repair Services"] = 8,
+                    }),
+                    certifications: [],
+                    sourceTitle: "Dusk supplier statement"
+                ),
+                BuildBrand(
+                    brandName: "Evergreen Loop",
+                    category: "Contemporary",
+                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
+                    {
+                        ["Material:Fiber traceability"] = 60,
+                        ["Material:Chemical management"] = 55,
+                        ["Material:Recycled content / Preferred material content"] = 58,
+                        ["Material:Certifications"] = 50,
+                        ["Labor:Living wage commitment & coverage"] = 52,
+                        ["Labor:Worker safety & working hours"] = 55,
+                        ["Labor:Supplier audit transparency"] = 50,
+                        ["Carbon:Reduction targets & progress"] = 60,
+                        ["Carbon:Renewable energy"] = 54,
+                        ["Longevity:Durability Testing / Expected Lifetime"] = 57,
+                    }),
+                    certifications: ["GRS"],
+                    sourceTitle: "Evergreen responsibility page"
+                ),
+            };
+
+            db.ClothingBrands.AddRange(seededBrands);
+            db.SaveChanges();
+        }
+
+        static ClothingBrand BuildBrand(
+            string brandName,
+            string category,
+            List<BrandCriterionItem> criteria,
+            IReadOnlyList<string> certifications,
+            string sourceTitle)
+        {
+            var brand = new ClothingBrand
+            {
+                BrandName = brandName,
+                Category = category,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+            };
+
+            foreach (var criterion in criteria)
+            {
+                brand.CriteriaItems.Add(criterion);
+            }
+
+            brand.EvidenceSources.Add(new BrandEvidenceSource
+            {
+                SourceTitle = sourceTitle,
+                SourceUrl = "https://example.com/report",
+                SourceType = "Report",
+                CreatedAtUtc = DateTime.UtcNow,
+            });
+
+            foreach (var certification in certifications.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                brand.Certifications.Add(new BrandCertification
+                {
+                    Name = certification,
+                    CreatedAtUtc = DateTime.UtcNow,
+                });
+            }
+
+            brand.EvidenceSourceCount = brand.EvidenceSources.Count;
+            BrandScoreCalculator.NormalizeCriteria(brand);
+            BrandScoreCalculator.ApplyScores(brand);
+            return brand;
+        }
+
+        static List<BrandCriterionItem> GetDefaultCriteriaTemplate()
+        {
+            return
+            [
+                new() { Category = "Material", Name = "Fiber traceability", Unit = "%", Weight = 1m },
+                new() { Category = "Material", Name = "Chemical management", Weight = 1m },
+                new() { Category = "Material", Name = "Recycled content / Preferred material content", Unit = "%", Weight = 1m },
+                new() { Category = "Material", Name = "Certifications", Weight = 1m },
+                new() { Category = "Labor", Name = "Living wage commitment & coverage", Weight = 1m },
+                new() { Category = "Labor", Name = "Worker safety & working hours", Weight = 1m },
+                new() { Category = "Labor", Name = "Freedom of association / grievance mechanisms", Weight = 1m },
+                new() { Category = "Labor", Name = "Supplier audit transparency", Weight = 1m },
+                new() { Category = "Carbon", Name = "Reduction targets & progress", Weight = 1m },
+                new() { Category = "Carbon", Name = "Renewable energy", Unit = "%", Weight = 1m },
+                new() { Category = "Carbon", Name = "Transport & logistics", Weight = 1m },
+                new() { Category = "Carbon", Name = "Scope 1-3 measurement", Weight = 1m },
+                new() { Category = "Longevity", Name = "Durability Testing / Expected Lifetime", Weight = 1m },
+                new() { Category = "Longevity", Name = "Repairability & Repair Services", Weight = 1m },
+                new() { Category = "Longevity", Name = "Circularity Programs", Weight = 1m },
+                new() { Category = "Longevity", Name = "Care Instructions & User Guidance", Weight = 1m },
+            ];
+        }
+
+        static List<BrandCriterionItem> FillCriteria(List<BrandCriterionItem> template, IReadOnlyDictionary<string, decimal> overrides)
+        {
+            return template.Select(item =>
+            {
+                var key = $"{item.Category}:{item.Name}";
+                overrides.TryGetValue(key, out var value);
+
+                return new BrandCriterionItem
+                {
+                    Category = item.Category,
+                    Name = item.Name,
+                    NumericValue = overrides.ContainsKey(key) ? value : null,
+                    Unit = item.Unit,
+                    Weight = item.Weight,
+                    Notes = null,
+                    CreatedAtUtc = DateTime.UtcNow,
+                };
+            }).ToList();
         }
     }
 }
