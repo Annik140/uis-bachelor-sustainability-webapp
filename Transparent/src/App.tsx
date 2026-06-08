@@ -49,6 +49,8 @@ type CriterionItem = {
   notes?: string
 }
 
+type DashboardFilter = 'all' | 'highSustainability' | 'highTransparency' | 'mostDocumented'
+
 function normalizeSustainabilityScore(scoreOutOfHundred?: number) {
   if (scoreOutOfHundred === undefined || scoreOutOfHundred === null) {
     return undefined
@@ -63,6 +65,14 @@ function toTransparencyPercent(scoreOutOfFive?: number) {
   }
 
   return Math.min(Math.max((scoreOutOfFive / 5) * 100, 0), 100)
+}
+
+function getBrandCoveragePercent(brand: Brand) {
+  const total = brand.criteriaItems?.length ?? 0
+  if (total === 0) return 0
+
+  const filled = brand.criteriaItems?.filter(item => item.numericValue !== undefined && item.numericValue !== null).length ?? 0
+  return (filled / total) * 100
 }
 
 function getSustainabilityColor(scoreOutOfHundred?: number) {
@@ -97,16 +107,47 @@ function App() {
   const path = window.location.pathname
   const [brands, setBrands] = useState<Brand[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilter, setActiveFilter] = useState<DashboardFilter>('all')
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const editMatch = path.match(/^\/admin\/brands\/(\d+)\/edit$/)
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
-  const filteredBrands = normalizedQuery
+  const appliedFilter: DashboardFilter = normalizedQuery ? 'all' : activeFilter
+
+  const searchedBrands = normalizedQuery
     ? brands.filter(brand =>
         brand.brandName.toLowerCase().includes(normalizedQuery) ||
         (brand.category ?? '').toLowerCase().includes(normalizedQuery)
       )
     : brands
+
+  const filteredBrands = searchedBrands.filter(brand => {
+    if (appliedFilter === 'highSustainability') {
+      return (normalizeSustainabilityScore(brand.sustainabilityScore) ?? -1) >= 70
+    }
+
+    if (appliedFilter === 'highTransparency') {
+      return (brand.transparencyScore ?? -1) >= 4
+    }
+
+    if (appliedFilter === 'mostDocumented') {
+      return getBrandCoveragePercent(brand) >= 75
+    }
+
+    return true
+  })
+
+  const latestUpdateMs = brands.reduce((latest, brand) => {
+    if (!brand.updatedAtUtc) return latest
+    const current = new Date(brand.updatedAtUtc).getTime()
+    if (Number.isNaN(current)) return latest
+    return Math.max(latest, current)
+  }, 0)
+
+  const lastUpdatedLabel = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    year: 'numeric'
+  }).format(latestUpdateMs > 0 ? new Date(latestUpdateMs) : new Date())
 
   const sustainabilityValues = brands
     .map(brand => normalizeSustainabilityScore(brand.sustainabilityScore))
@@ -136,6 +177,12 @@ function App() {
         .catch(() => setBrands([]))
     }
   }, [path])
+
+  useEffect(() => {
+    if (normalizedQuery && activeFilter !== 'all') {
+      setActiveFilter('all')
+    }
+  }, [normalizedQuery, activeFilter])
 
   useEffect(() => {
     if (!selectedBrand) {
@@ -174,6 +221,9 @@ function App() {
         brandCount={brands.length}
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        lastUpdatedLabel={lastUpdatedLabel}
       />
       
       <main className="app-main">
