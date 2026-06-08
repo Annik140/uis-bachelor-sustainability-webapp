@@ -166,6 +166,7 @@ public class Program
             var entity = new ClothingBrand
             {
                 BrandName = input.BrandName,
+                Description = input.Description?.Trim(),
                 Category = input.Category,
                 MaterialSustainabilityScore = input.MaterialSustainabilityScore,
                 LaborPracticesScore = input.LaborPracticesScore,
@@ -196,6 +197,7 @@ public class Program
                 .FirstOrDefaultAsync(b => b.Id == id);
             if (existing is null) return Results.NotFound();
             existing.BrandName = input.BrandName;
+            existing.Description = input.Description?.Trim();
             existing.Category = input.Category;
             existing.MaterialSustainabilityScore = input.MaterialSustainabilityScore;
             existing.LaborPracticesScore = input.LaborPracticesScore;
@@ -296,118 +298,116 @@ public class Program
 
         static void SeedDemoBrands(AppDbContext db)
         {
-            if (db.ClothingBrands.Any())
-            {
-                return;
-            }
-
             var allCriteria = GetDefaultCriteriaTemplate();
 
             var seededBrands = new List<ClothingBrand>
             {
                 BuildBrand(
-                    brandName: "Aurora Atelier",
-                    category: "Luxury",
+                    brandName: "Pinnacle Proof",
+                    description: "Synthetic test profile. Not a real brand. Represents maximum sustainability score with full disclosed evidence.",
+                    category: "Test benchmark",
                     criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
                     {
-                        ["Material:Fiber traceability"] = 95,
-                        ["Labor:Living wage commitment & coverage"] = 90,
-                        ["Carbon:Scope 1-3 measurement"] = 92,
-                        ["Longevity:Durability Testing / Expected Lifetime"] = 93,
+                        ["Material:Fiber traceability"] = 100,
+                        ["Material:Chemical management"] = 100,
+                        ["Material:Recycled content / Preferred material content"] = 100,
+                        ["Material:Certifications"] = 100,
+                        ["Labor:Living wage commitment & coverage"] = 100,
+                        ["Labor:Worker safety & working hours"] = 100,
+                        ["Labor:Freedom of association / grievance mechanisms"] = 100,
+                        ["Labor:Supplier audit transparency"] = 100,
+                        ["Carbon:Reduction targets & progress"] = 100,
+                        ["Carbon:Renewable energy"] = 100,
+                        ["Carbon:Transport & logistics"] = 100,
+                        ["Carbon:Scope 1-3 measurement"] = 100,
+                        ["Longevity:Durability Testing / Expected Lifetime"] = 100,
+                        ["Longevity:Repairability & Repair Services"] = 100,
+                        ["Longevity:Circularity Programs"] = 100,
+                        ["Longevity:Care Instructions & User Guidance"] = 100,
                     }),
-                    certifications: ["GOTS", "SBTi"],
-                    sourceTitle: "Aurora sustainability brief"
+                    certifications: ["GOTS", "SBTi", "B Corp"],
+                    sourceTitle: "Pinnacle methodology sheet"
                 ),
                 BuildBrand(
-                    brandName: "Baseline Basics",
-                    category: "Fast fashion",
+                    brandName: "Nadir Null",
+                    description: "Synthetic test profile. Not a real brand. Represents minimum sustainability score while still fully disclosed for stress testing.",
+                    category: "Test benchmark",
                     criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
                     {
-                        ["Material:Fiber traceability"] = 20,
-                        ["Material:Chemical management"] = 15,
-                        ["Material:Recycled content / Preferred material content"] = 10,
+                        ["Material:Fiber traceability"] = 0,
+                        ["Material:Chemical management"] = 0,
+                        ["Material:Recycled content / Preferred material content"] = 0,
                         ["Material:Certifications"] = 0,
-                        ["Labor:Living wage commitment & coverage"] = 25,
-                        ["Labor:Worker safety & working hours"] = 20,
-                        ["Labor:Freedom of association / grievance mechanisms"] = 15,
-                        ["Labor:Supplier audit transparency"] = 10,
-                        ["Carbon:Reduction targets & progress"] = 20,
-                        ["Carbon:Renewable energy"] = 15,
-                        ["Carbon:Transport & logistics"] = 10,
-                        ["Carbon:Scope 1-3 measurement"] = 25,
-                        ["Longevity:Durability Testing / Expected Lifetime"] = 20,
-                        ["Longevity:Repairability & Repair Services"] = 15,
-                        ["Longevity:Circularity Programs"] = 10,
-                        ["Longevity:Care Instructions & User Guidance"] = 25,
+                        ["Labor:Living wage commitment & coverage"] = 0,
+                        ["Labor:Worker safety & working hours"] = 0,
+                        ["Labor:Freedom of association / grievance mechanisms"] = 0,
+                        ["Labor:Supplier audit transparency"] = 0,
+                        ["Carbon:Reduction targets & progress"] = 0,
+                        ["Carbon:Renewable energy"] = 0,
+                        ["Carbon:Transport & logistics"] = 0,
+                        ["Carbon:Scope 1-3 measurement"] = 0,
+                        ["Longevity:Durability Testing / Expected Lifetime"] = 0,
+                        ["Longevity:Repairability & Repair Services"] = 0,
+                        ["Longevity:Circularity Programs"] = 0,
+                        ["Longevity:Care Instructions & User Guidance"] = 0,
                     }),
                     certifications: [],
-                    sourceTitle: "Baseline annual report"
+                    sourceTitle: "Nadir disclosure sheet"
                 ),
                 BuildBrand(
-                    brandName: "Cedar Collective",
-                    category: "Outdoor",
-                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
-                    {
-                        ["Material:Fiber traceability"] = 90,
-                        ["Material:Chemical management"] = 85,
-                        ["Material:Recycled content / Preferred material content"] = 88,
-                        ["Material:Certifications"] = 90,
-                        ["Labor:Living wage commitment & coverage"] = 82,
-                        ["Labor:Worker safety & working hours"] = 86,
-                        ["Labor:Freedom of association / grievance mechanisms"] = 80,
-                        ["Labor:Supplier audit transparency"] = 84,
-                        ["Carbon:Reduction targets & progress"] = 88,
-                        ["Carbon:Renewable energy"] = 86,
-                        ["Carbon:Transport & logistics"] = 82,
-                        ["Carbon:Scope 1-3 measurement"] = 90,
-                        ["Longevity:Durability Testing / Expected Lifetime"] = 92,
-                        ["Longevity:Repairability & Repair Services"] = 85,
-                        ["Longevity:Circularity Programs"] = 80,
-                        ["Longevity:Care Instructions & User Guidance"] = 88,
-                    }),
-                    certifications: ["bluesign", "Fair Wear Foundation", "SBTi"],
-                    sourceTitle: "Cedar impact report"
-                ),
-                BuildBrand(
-                    brandName: "Dusk Discount",
-                    category: "Value retail",
-                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
-                    {
-                        ["Material:Chemical management"] = 12,
-                        ["Labor:Worker safety & working hours"] = 18,
-                        ["Carbon:Transport & logistics"] = 10,
-                        ["Longevity:Repairability & Repair Services"] = 8,
-                    }),
+                    brandName: "No Info Void",
+                    description: "Synthetic test profile. Not a real brand. All criteria are left as Information not found to test extreme missing-data cards.",
+                    category: "Test benchmark",
+                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>()),
                     certifications: [],
-                    sourceTitle: "Dusk supplier statement"
-                ),
-                BuildBrand(
-                    brandName: "Evergreen Loop",
-                    category: "Contemporary",
-                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
-                    {
-                        ["Material:Fiber traceability"] = 60,
-                        ["Material:Chemical management"] = 55,
-                        ["Material:Recycled content / Preferred material content"] = 58,
-                        ["Material:Certifications"] = 50,
-                        ["Labor:Living wage commitment & coverage"] = 52,
-                        ["Labor:Worker safety & working hours"] = 55,
-                        ["Labor:Supplier audit transparency"] = 50,
-                        ["Carbon:Reduction targets & progress"] = 60,
-                        ["Carbon:Renewable energy"] = 54,
-                        ["Longevity:Durability Testing / Expected Lifetime"] = 57,
-                    }),
-                    certifications: ["GRS"],
-                    sourceTitle: "Evergreen responsibility page"
+                    sourceTitle: "No Info test stub"
                 ),
             };
 
-            db.ClothingBrands.AddRange(seededBrands);
+            var syntheticSeedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Pinnacle Proof",
+                "Nadir Null",
+                "No Info Void",
+            };
+
+            var keepNames = seededBrands
+                .Select(b => b.BrandName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var removableSynthetic = db.ClothingBrands
+                .Include(b => b.CriteriaItems)
+                .Include(b => b.EvidenceSources)
+                .Include(b => b.Certifications)
+                .Where(b => syntheticSeedNames.Contains(b.BrandName) && !keepNames.Contains(b.BrandName))
+                .ToList();
+
+            if (removableSynthetic.Count > 0)
+            {
+                db.ClothingBrands.RemoveRange(removableSynthetic);
+                db.SaveChanges();
+            }
+
+            var existingNames = db.ClothingBrands
+                .Select(b => b.BrandName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var missingBrands = seededBrands
+                .Where(brand => !existingNames.Contains(brand.BrandName))
+                .ToList();
+
+            if (missingBrands.Count == 0)
+            {
+                return;
+            }
+
+            db.ClothingBrands.AddRange(missingBrands);
             db.SaveChanges();
         }
 
         static ClothingBrand BuildBrand(
             string brandName,
+            string description,
             string category,
             List<BrandCriterionItem> criteria,
             IReadOnlyList<string> certifications,
@@ -416,6 +416,7 @@ public class Program
             var brand = new ClothingBrand
             {
                 BrandName = brandName,
+                Description = description,
                 Category = category,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow,

@@ -41,6 +41,7 @@ type CriterionDefinition = {
 type Brand = {
   id?: number
   brandName: string
+  description?: string
   evidenceSourceCount?: number
   evidenceSources?: EvidenceSource[]
   criteriaItems?: CriterionItem[]
@@ -74,6 +75,7 @@ const categoryValues = ['Material', 'Labor', 'Carbon', 'Longevity'] as const
 
 const createEmptyBrand = (): Brand => ({
   brandName: '',
+  description: '',
   evidenceSourceCount: 0,
   evidenceSources: [],
   certifications: [],
@@ -440,6 +442,15 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           <div>
             <label>Brand name</label>
             <input required value={form.brandName} onChange={e => updateBrand({ brandName: e.target.value })} />
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <label>Description</label>
+            <textarea
+              value={form.description ?? ''}
+              onChange={e => updateBrand({ description: e.target.value })}
+              rows={3}
+              placeholder="Optional description shown on the public brand card and brand page."
+            />
           </div>
         </section>
 
