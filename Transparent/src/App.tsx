@@ -48,12 +48,12 @@ type CriterionItem = {
   notes?: string
 }
 
-function toHundredScale(scoreOutOfTen?: number) {
-  if (scoreOutOfTen === undefined || scoreOutOfTen === null) {
+function normalizeSustainabilityScore(scoreOutOfHundred?: number) {
+  if (scoreOutOfHundred === undefined || scoreOutOfHundred === null) {
     return undefined
   }
 
-  return Math.min(Math.max(scoreOutOfTen * 10, 0), 100)
+  return Math.min(Math.max(scoreOutOfHundred, 0), 100)
 }
 
 function toTransparencyPercent(scoreOutOfFive?: number) {
@@ -64,8 +64,8 @@ function toTransparencyPercent(scoreOutOfFive?: number) {
   return Math.min(Math.max((scoreOutOfFive / 5) * 100, 0), 100)
 }
 
-function getSustainabilityColor(scoreOutOfTen?: number) {
-  const score = toHundredScale(scoreOutOfTen)
+function getSustainabilityColor(scoreOutOfHundred?: number) {
+  const score = normalizeSustainabilityScore(scoreOutOfHundred)
   if (score === undefined || score === null) return '#6b7280'
   if (score >= 70) return '#3d9f66'
   if (score >= 40) return '#b1843b'
@@ -107,15 +107,15 @@ function App() {
       )
     : brands
 
-  const sustainabilityValues = filteredBrands
-    .map(brand => toHundredScale(brand.sustainabilityScore))
+  const sustainabilityValues = brands
+    .map(brand => normalizeSustainabilityScore(brand.sustainabilityScore))
     .filter((value): value is number => value !== undefined)
 
-  const totalCriteriaCount = filteredBrands.reduce(
+  const totalCriteriaCount = brands.reduce(
     (sum, brand) => sum + (brand.criteriaItems?.length ?? 0),
     0
   )
-  const filledCriteriaCount = filteredBrands.reduce(
+  const filledCriteriaCount = brands.reduce(
     (sum, brand) => sum + (brand.criteriaItems?.filter(item => item.numericValue !== undefined && item.numericValue !== null).length ?? 0),
     0
   )
@@ -170,7 +170,7 @@ function App() {
       <Header
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
-        brandCount={filteredBrands.length}
+        brandCount={brands.length}
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
       />
@@ -210,7 +210,7 @@ function App() {
                       <div className="score-chip">
                         <p className="score-chip-label">Sustainability</p>
                         <p className="score-chip-value" style={{ color: getSustainabilityColor(brand.sustainabilityScore) }}>
-                          {toHundredScale(brand.sustainabilityScore)?.toFixed(0) ?? 'n/a'} / 100
+                          {normalizeSustainabilityScore(brand.sustainabilityScore)?.toFixed(0) ?? 'n/a'} / 100
                         </p>
                       </div>
 
@@ -254,7 +254,7 @@ function App() {
                   <div className="hero-score-block">
                     <p className="hero-score-label">Sustainability</p>
                     <p className="hero-score-value" style={{ color: getSustainabilityColor(selectedBrand.sustainabilityScore) }}>
-                      {toHundredScale(selectedBrand.sustainabilityScore)?.toFixed(0) ?? 'n/a'}
+                      {normalizeSustainabilityScore(selectedBrand.sustainabilityScore)?.toFixed(0) ?? 'n/a'}
                     </p>
                     <p className="hero-score-unit">/ 100</p>
                   </div>

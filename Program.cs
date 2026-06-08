@@ -67,25 +67,6 @@ public class Program
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
-
-            var brands = db.ClothingBrands
-                .Include(b => b.CriteriaItems)
-                .Include(b => b.EvidenceSources)
-                .Include(b => b.Certifications)
-                .ToList();
-
-            var hasUpdates = false;
-            foreach (var brand in brands)
-            {
-                BrandScoreCalculator.NormalizeCriteria(brand);
-                BrandScoreCalculator.ApplyScores(brand);
-                hasUpdates = true;
-            }
-
-            if (hasUpdates)
-            {
-                db.SaveChanges();
-            }
         }
 
         // Configure the HTTP request pipeline.

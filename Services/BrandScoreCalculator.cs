@@ -14,10 +14,9 @@ public static class BrandScoreCalculator
         {
             // Material
             [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, "%"),
-            [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.20m, null),
-            [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.20m, "%"),
-            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.15m, null),
-            [Key("Material", "Packaging sustainability")] = new("Material", "Packaging sustainability", 0.15m, "%"),
+            [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.25m, null),
+            [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.25m, "%"),
+            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.20m, null),
 
             // Labor
             [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.35m, null),
@@ -69,9 +68,9 @@ public static class BrandScoreCalculator
 
         if (weightSum > 0m)
         {
-            // Category scores are computed on a 0-100 scale; convert final score to 1-10.
+            // Category scores are computed on a 0-100 scale.
             var weightedAverage100 = weightedTotal / weightSum;
-            brand.SustainabilityScore = RoundToOneDecimal(Clamp(weightedAverage100 / 10m, 1m, 10m));
+            brand.SustainabilityScore = RoundToOneDecimal(Clamp(weightedAverage100, 0m, 100m));
         }
         else
         {

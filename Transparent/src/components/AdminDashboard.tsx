@@ -113,7 +113,7 @@ export default function AdminDashboard() {
               <article key={brand.id} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16, background: '#fff' }}>
                 <h4>{brand.brandName}</h4>
                 <p>{brand.category}</p>
-                <p>Sustainability: {brand.sustainabilityScore?.toFixed(1) ?? 'n/a'} / 10</p>
+                <p>Sustainability: {brand.sustainabilityScore?.toFixed(1) ?? 'n/a'} / 100</p>
                 <p>Transparency: {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5</p>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button type="button" onClick={() => handleEditBrand(brand.id)}>Edit</button>
