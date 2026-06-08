@@ -6,8 +6,8 @@ type HeaderProps = {
   brandCount: number
   averageSustainability?: number
   dataCoverage?: number
-  activeFilter: 'all' | 'highSustainability' | 'highTransparency' | 'mostDocumented'
-  onFilterChange: (value: 'all' | 'highSustainability' | 'highTransparency' | 'mostDocumented') => void
+  activeSort: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'documentationDesc'
+  onSortChange: (value: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'documentationDesc') => void
   lastUpdatedLabel: string
 }
 
@@ -17,8 +17,8 @@ export default function Header({
   brandCount,
   averageSustainability,
   dataCoverage,
-  activeFilter,
-  onFilterChange,
+  activeSort,
+  onSortChange,
   lastUpdatedLabel,
 }: HeaderProps) {
   const isSearching = searchQuery.trim().length > 0
@@ -59,39 +59,39 @@ export default function Header({
             </div>
             <div className="stat">
               <div className="stat-number">{dataCoverage?.toFixed(0) ?? 'n/a'}%</div>
-              <div className="stat-label">DATA COVERAGE</div>
+              <div className="stat-label">AVG DATA COVERAGE</div>
             </div>
           </div>
         )}
 
         {!isSearching && (
           <div className="header-tools" aria-label="Dashboard controls">
-            <div className="filter-row" role="group" aria-label="Filter brands">
+            <div className="filter-row" role="group" aria-label="Sort brands">
               <button
                 type="button"
-                className={`filter-chip ${activeFilter === 'all' ? 'filter-chip-active' : ''}`}
-                onClick={() => onFilterChange('all')}
+                className={`filter-chip ${activeSort === 'lastUpdatedDesc' ? 'filter-chip-active' : ''}`}
+                onClick={() => onSortChange('lastUpdatedDesc')}
               >
-                All brands
+                Last updated
               </button>
               <button
                 type="button"
-                className={`filter-chip ${activeFilter === 'highSustainability' ? 'filter-chip-active' : ''}`}
-                onClick={() => onFilterChange('highSustainability')}
+                className={`filter-chip ${activeSort === 'sustainabilityDesc' ? 'filter-chip-active' : ''}`}
+                onClick={() => onSortChange('sustainabilityDesc')}
               >
                 High sustainability
               </button>
               <button
                 type="button"
-                className={`filter-chip ${activeFilter === 'highTransparency' ? 'filter-chip-active' : ''}`}
-                onClick={() => onFilterChange('highTransparency')}
+                className={`filter-chip ${activeSort === 'transparencyDesc' ? 'filter-chip-active' : ''}`}
+                onClick={() => onSortChange('transparencyDesc')}
               >
                 High transparency
               </button>
               <button
                 type="button"
-                className={`filter-chip ${activeFilter === 'mostDocumented' ? 'filter-chip-active' : ''}`}
-                onClick={() => onFilterChange('mostDocumented')}
+                className={`filter-chip ${activeSort === 'documentationDesc' ? 'filter-chip-active' : ''}`}
+                onClick={() => onSortChange('documentationDesc')}
               >
                 Most documented
               </button>

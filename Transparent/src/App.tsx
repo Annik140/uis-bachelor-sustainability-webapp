@@ -49,7 +49,13 @@ type CriterionItem = {
   notes?: string
 }
 
-type DashboardFilter = 'all' | 'highSustainability' | 'highTransparency' | 'mostDocumented'
+type DashboardSort = 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'documentationDesc'
+
+function toUpdatedAtMs(value?: string) {
+  if (!value) return 0
+  const parsed = new Date(value).getTime()
+  return Number.isNaN(parsed) ? 0 : parsed
+}
 
 function normalizeSustainabilityScore(scoreOutOfHundred?: number) {
   if (scoreOutOfHundred === undefined || scoreOutOfHundred === null) {
@@ -107,12 +113,12 @@ function App() {
   const path = window.location.pathname
   const [brands, setBrands] = useState<Brand[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<DashboardFilter>('all')
+  const [activeSort, setActiveSort] = useState<DashboardSort>('lastUpdatedDesc')
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const editMatch = path.match(/^\/admin\/brands\/(\d+)\/edit$/)
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
-  const appliedFilter: DashboardFilter = normalizedQuery ? 'all' : activeFilter
+  const appliedSort: DashboardSort = normalizedQuery ? 'lastUpdatedDesc' : activeSort
 
   const searchedBrands = normalizedQuery
     ? brands.filter(brand =>
@@ -121,20 +127,26 @@ function App() {
       )
     : brands
 
-  const filteredBrands = searchedBrands.filter(brand => {
-    if (appliedFilter === 'highSustainability') {
-      return (normalizeSustainabilityScore(brand.sustainabilityScore) ?? -1) >= 70
+  const visibleBrands = [...searchedBrands].sort((a, b) => {
+    if (appliedSort === 'lastUpdatedDesc') {
+      const updatedDiff = toUpdatedAtMs(b.updatedAtUtc) - toUpdatedAtMs(a.updatedAtUtc)
+      if (updatedDiff !== 0) return updatedDiff
+      return a.brandName.localeCompare(b.brandName)
     }
 
-    if (appliedFilter === 'highTransparency') {
-      return (brand.transparencyScore ?? -1) >= 4
+    if (appliedSort === 'sustainabilityDesc') {
+      return (normalizeSustainabilityScore(b.sustainabilityScore) ?? -1) - (normalizeSustainabilityScore(a.sustainabilityScore) ?? -1)
     }
 
-    if (appliedFilter === 'mostDocumented') {
-      return getBrandCoveragePercent(brand) >= 75
+    if (appliedSort === 'transparencyDesc') {
+      return (b.transparencyScore ?? -1) - (a.transparencyScore ?? -1)
     }
 
-    return true
+    if (appliedSort === 'documentationDesc') {
+      return getBrandCoveragePercent(b) - getBrandCoveragePercent(a)
+    }
+
+    return a.brandName.localeCompare(b.brandName)
   })
 
   const latestUpdateMs = brands.reduce((latest, brand) => {
@@ -179,10 +191,10 @@ function App() {
   }, [path])
 
   useEffect(() => {
-    if (normalizedQuery && activeFilter !== 'all') {
-      setActiveFilter('all')
+    if (normalizedQuery && activeSort !== 'lastUpdatedDesc') {
+      setActiveSort('lastUpdatedDesc')
     }
-  }, [normalizedQuery, activeFilter])
+  }, [normalizedQuery, activeSort])
 
   useEffect(() => {
     if (!selectedBrand) {
@@ -221,20 +233,20 @@ function App() {
         brandCount={brands.length}
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
+        activeSort={activeSort}
+        onSortChange={setActiveSort}
         lastUpdatedLabel={lastUpdatedLabel}
       />
       
       <main className="app-main">
         <section className="brands-container">
-          {filteredBrands.length === 0 ? (
+          {visibleBrands.length === 0 ? (
             <div className="brands-placeholder">
               <p>{brands.length === 0 ? 'No brands added yet.' : 'No brands match your search.'}</p>
             </div>
           ) : (
             <div className="brands-grid">
-              {filteredBrands.map(brand => (
+              {visibleBrands.map(brand => (
                 <article
                   key={brand.id}
                   className="brand-card"

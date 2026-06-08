@@ -31,11 +31,11 @@
 }
 
 .search-form {
-  margin-bottom: 50px;
+  margin-bottom: 0;
 }
 
 .search-form-active {
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 
 .header-tools {
@@ -71,6 +71,8 @@
 }
 
 .header-last-updated {
+  display: block;
+  margin-top: 14px;
   font-size: 12px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
