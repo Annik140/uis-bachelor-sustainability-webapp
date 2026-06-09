@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './AdminLogin.css'
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('')
@@ -20,26 +21,47 @@ export default function AdminLogin() {
       } else {
         setError('Invalid credentials')
       }
-    } catch (err) {
+    } catch {
       setError('Network error')
     }
   }
 
   return (
-    <div style={{padding: 20}}>
-      <h2>Admin Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Username</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} />
-        </div>
-        <div>
-          <label>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-        </div>
-        <button type="submit">Sign in</button>
-      </form>
-      {error && <p style={{color: 'red'}}>{error}</p>}
-    </div>
+    <main className="admin-login-page">
+      <section className="admin-login-card" aria-label="Admin login form">
+        <p className="admin-login-kicker">Transparent</p>
+        <h1 className="admin-login-title">Admin Login</h1>
+        <p className="admin-login-subtitle">Sign in to manage brand profiles, criteria, and source updates.</p>
+
+        <form className="admin-login-form" onSubmit={handleSubmit}>
+          <div className="admin-field">
+            <label htmlFor="admin-username">Username</label>
+            <input
+              id="admin-username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              autoComplete="username"
+            />
+          </div>
+
+          <div className="admin-field">
+            <label htmlFor="admin-password">Password</label>
+            <input
+              id="admin-password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button type="submit" className="admin-login-button">Sign in</button>
+        </form>
+
+        {error && <p className="admin-login-error">{error}</p>}
+
+        <a href="/" className="admin-login-backlink">Back to Transparency Index</a>
+      </section>
+    </main>
   )
 }

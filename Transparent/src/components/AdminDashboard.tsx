@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './AdminDashboard.css'
 
 type Brand = {
   id: number
@@ -11,9 +12,12 @@ type Brand = {
 }
 
 export default function AdminDashboard() {
+  const BRANDS_SCROLL_THRESHOLD = 8
+
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     fetchBrands()
@@ -81,50 +85,89 @@ export default function AdminDashboard() {
     }
   }
 
-  return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h2>Admin Dashboard</h2>
-          <p>Manage your clothing brands, criteria, and score reasoning from here.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button type="button" onClick={handleLogout} style={{ padding: '12px 18px' }}>
-            Logout
-          </button>
-          <button type="button" onClick={handleBackToMainPage} style={{ padding: '12px 18px' }}>
-            Back to main page
-          </button>
-          <button type="button" onClick={handleAddBrand} style={{ padding: '12px 18px', fontWeight: 700 }}>
-            Add new brand
-          </button>
-        </div>
-      </div>
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const visibleBrands = normalizedQuery
+    ? brands.filter(brand =>
+        brand.brandName.toLowerCase().includes(normalizedQuery) ||
+        (brand.category ?? '').toLowerCase().includes(normalizedQuery)
+      )
+    : brands
 
-      <section>
-        <h3>Created brands</h3>
-        {loading && <p>Loading brands...</p>}
-        {error && <p style={{ color: '#b00020' }}>{error}</p>}
-        {!loading && !error && brands.length === 0 ? (
-          <p>No brands created yet.</p>
-        ) : !loading && !error ? (
-          <div style={{ display: 'grid', gap: 16 }}>
-            {brands.map(brand => (
-              <article key={brand.id} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16, background: '#fff' }}>
-                <h4>{brand.brandName}</h4>
-                <p>{brand.category}</p>
-                <p>Sustainability: {brand.sustainabilityScore?.toFixed(1) ?? 'n/a'} / 100</p>
-                <p>Transparency: {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5</p>
-                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <button type="button" onClick={() => handleEditBrand(brand.id)}>Edit</button>
-                  <button type="button" onClick={() => handleDelete(brand.id)}>Delete</button>
-                </div>
-              </article>
-            ))}
+  return (
+    <main className="admin-dashboard-page">
+      <section className="admin-dashboard-shell">
+        <header className="admin-dashboard-header">
+          <div>
+            <p className="admin-dashboard-kicker">Transparent</p>
+            <h1 className="admin-dashboard-title">Admin Dashboard</h1>
+            <p className="admin-dashboard-subtitle">Manage brand entries, keep scoring data current, and publish consistent updates.</p>
           </div>
-        ) : null
-        }
+
+          <div className="admin-dashboard-controls">
+            <div className="admin-dashboard-actions">
+              <button type="button" onClick={handleBackToMainPage} className="admin-btn admin-btn-ghost">
+                Back to main page
+              </button>
+              <button type="button" onClick={handleLogout} className="admin-btn admin-btn-logout">
+                Logout
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <section className="admin-brands-section">
+          <div className="admin-brands-top">
+            <h2 className="admin-brands-heading">Created brands</h2>
+            <p className="admin-brands-count">{brands.length} total</p>
+          </div>
+
+          <div className="admin-add-brand-row">
+            <button type="button" onClick={handleAddBrand} className="admin-btn admin-btn-primary">
+              Add new brand
+            </button>
+          </div>
+
+          <form className="admin-brand-search" onSubmit={e => e.preventDefault()}>
+            <input
+              type="text"
+              placeholder="Search by brand or category..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              aria-label="Search created brands"
+            />
+          </form>
+
+          {loading && <p className="admin-feedback">Loading brands...</p>}
+          {error && <p className="admin-feedback admin-feedback-error">{error}</p>}
+
+          {!loading && !error && brands.length === 0 ? (
+            <p className="admin-feedback">No brands created yet.</p>
+          ) : !loading && !error && visibleBrands.length === 0 ? (
+            <p className="admin-feedback">No brands match your search.</p>
+          ) : !loading && !error ? (
+            <div className={`admin-brand-list ${visibleBrands.length > BRANDS_SCROLL_THRESHOLD ? 'admin-brand-list-scrollable' : ''}`}>
+              {visibleBrands.map(brand => (
+                <article key={brand.id} className="admin-brand-card">
+                  <div className="admin-brand-main">
+                    <h3>{brand.brandName}</h3>
+                    <p className="admin-brand-category">{brand.category ?? 'Uncategorized'}</p>
+                  </div>
+
+                  <div className="admin-brand-scores">
+                    <p>Sustainability: <strong>{brand.sustainabilityScore?.toFixed(1) ?? 'n/a'} / 100</strong></p>
+                    <p>Transparency: <strong>{brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5</strong></p>
+                  </div>
+
+                  <div className="admin-brand-actions">
+                    <button type="button" onClick={() => handleEditBrand(brand.id)} className="admin-btn admin-btn-ghost">Edit</button>
+                    <button type="button" onClick={() => handleDelete(brand.id)} className="admin-btn admin-btn-danger">Delete</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </section>
       </section>
-    </div>
+    </main>
   )
 }
