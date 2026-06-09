@@ -6,8 +6,8 @@ type HeaderProps = {
   brandCount: number
   averageSustainability?: number
   dataCoverage?: number
-  activeSort: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'documentationDesc'
-  onSortChange: (value: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'documentationDesc') => void
+  activeSort: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc'
+  onSortChange: (value: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc') => void
   lastUpdatedLabel: string
 }
 
@@ -45,7 +45,7 @@ export default function Header({
           />
         </form>
 
-        <p className="header-last-updated">Last updated: {lastUpdatedLabel}</p>
+        <p className="header-last-updated">Last update: {lastUpdatedLabel}</p>
 
         {!isSearching && (
           <div className="stats-container">
@@ -90,10 +90,10 @@ export default function Header({
               </button>
               <button
                 type="button"
-                className={`filter-chip ${activeSort === 'documentationDesc' ? 'filter-chip-active' : ''}`}
-                onClick={() => onSortChange('documentationDesc')}
+                className={`filter-chip ${activeSort === 'alphabeticalAsc' ? 'filter-chip-active' : ''}`}
+                onClick={() => onSortChange('alphabeticalAsc')}
               >
-                Most documented
+                A-Z
               </button>
             </div>
           </div>

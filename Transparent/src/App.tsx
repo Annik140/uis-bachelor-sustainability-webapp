@@ -49,7 +49,7 @@ type CriterionItem = {
   notes?: string
 }
 
-type DashboardSort = 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'documentationDesc'
+type DashboardSort = 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc'
 
 function toUpdatedAtMs(value?: string) {
   if (!value) return 0
@@ -65,20 +65,14 @@ function normalizeSustainabilityScore(scoreOutOfHundred?: number) {
   return Math.min(Math.max(scoreOutOfHundred, 0), 100)
 }
 
-function toTransparencyPercent(scoreOutOfFive?: number) {
+function getTransparencySegmentFill(scoreOutOfFive: number | undefined, segmentIndex: number) {
   if (scoreOutOfFive === undefined || scoreOutOfFive === null) {
-    return undefined
+    return 0
   }
 
-  return Math.min(Math.max((scoreOutOfFive / 5) * 100, 0), 100)
-}
-
-function getBrandCoveragePercent(brand: Brand) {
-  const total = brand.criteriaItems?.length ?? 0
-  if (total === 0) return 0
-
-  const filled = brand.criteriaItems?.filter(item => item.numericValue !== undefined && item.numericValue !== null).length ?? 0
-  return (filled / total) * 100
+  const clamped = Math.min(Math.max(scoreOutOfFive, 0), 5)
+  const segmentValue = clamped - segmentIndex
+  return Math.min(Math.max(segmentValue, 0), 1) * 100
 }
 
 function getSustainabilityColor(scoreOutOfHundred?: number) {
@@ -142,8 +136,8 @@ function App() {
       return (b.transparencyScore ?? -1) - (a.transparencyScore ?? -1)
     }
 
-    if (appliedSort === 'documentationDesc') {
-      return getBrandCoveragePercent(b) - getBrandCoveragePercent(a)
+    if (appliedSort === 'alphabeticalAsc') {
+      return a.brandName.localeCompare(b.brandName)
     }
 
     return a.brandName.localeCompare(b.brandName)
@@ -245,56 +239,62 @@ function App() {
               <p>{brands.length === 0 ? 'No brands added yet.' : 'No brands match your search.'}</p>
             </div>
           ) : (
-            <div className="brands-grid">
-              {visibleBrands.map(brand => (
-                <article
-                  key={brand.id}
-                  className="brand-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedBrand(brand)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      setSelectedBrand(brand)
-                    }
-                  }}
-                >
-                  <div className="brand-card-top">
-                    <h3 className="brand-title">{brand.brandName}</h3>
-                  </div>
-
-                  <div className="brand-card-body">
-                    <p className="brand-description-preview">
-                      {brand.description?.trim() || (brand.category ? `${brand.category} profile.` : 'Description coming soon.')}
-                    </p>
-
-                    <div className="scores-row" aria-label="Brand scores">
-                      <div className="score-chip">
-                        <p className="score-chip-label">Sustainability</p>
-                        <p className="score-chip-value" style={{ color: getSustainabilityColor(brand.sustainabilityScore) }}>
-                          {normalizeSustainabilityScore(brand.sustainabilityScore)?.toFixed(0) ?? 'n/a'} / 100
-                        </p>
-                      </div>
-
-                      <div className="score-chip">
-                        <p className="score-chip-label">Transparency</p>
-                        <p className="score-chip-value score-chip-value-neutral">
-                          {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5
-                        </p>
-                        <div className="transparency-track" aria-hidden="true">
-                          <div
-                            className="transparency-fill"
-                            style={{ width: `${toTransparencyPercent(brand.transparencyScore) ?? 0}%` }}
-                          />
-                        </div>
-                      </div>
+            <div className="brands-grid-shell">
+              <div className="brands-grid">
+                {visibleBrands.map(brand => (
+                  <article
+                    key={brand.id}
+                    className="brand-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedBrand(brand)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setSelectedBrand(brand)
+                      }
+                    }}
+                  >
+                    <div className="brand-card-top">
+                      <h3 className="brand-title">{brand.brandName}</h3>
                     </div>
 
-                    <p className="view-details">View details {'->'}</p>
-                  </div>
-                </article>
-              ))}
+                    <div className="brand-card-body">
+                      <p className="brand-description-preview">
+                        {brand.description?.trim() || (brand.category ? `${brand.category} profile.` : 'Description coming soon.')}
+                      </p>
+
+                      <div className="scores-row" aria-label="Brand scores">
+                        <div className="score-chip">
+                          <p className="score-chip-label">Sustainability</p>
+                          <p className="score-chip-value" style={{ color: getSustainabilityColor(brand.sustainabilityScore) }}>
+                            {normalizeSustainabilityScore(brand.sustainabilityScore)?.toFixed(0) ?? 'n/a'} / 100
+                          </p>
+                        </div>
+
+                        <div className="score-chip">
+                          <p className="score-chip-label">Transparency</p>
+                          <p className="score-chip-value score-chip-value-neutral">
+                            {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5
+                          </p>
+                          <div className="transparency-track" aria-hidden="true">
+                            {Array.from({ length: 5 }, (_, index) => (
+                              <div key={index} className="transparency-segment">
+                                <div
+                                  className="transparency-segment-fill"
+                                  style={{ width: `${getTransparencySegmentFill(brand.transparencyScore, index)}%` }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="view-details">View details {'->'}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -330,10 +330,14 @@ function App() {
                     </p>
                     <p className="hero-score-unit">/ 5</p>
                     <div className="transparency-track transparency-track-hero" aria-hidden="true">
-                      <div
-                        className="transparency-fill"
-                        style={{ width: `${toTransparencyPercent(selectedBrand.transparencyScore) ?? 0}%` }}
-                      />
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <div key={index} className="transparency-segment">
+                          <div
+                            className="transparency-segment-fill"
+                            style={{ width: `${getTransparencySegmentFill(selectedBrand.transparencyScore, index)}%` }}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </section>
