@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import './AdminBrandForm.css'
 
 type Mode = 'create' | 'edit'
 
@@ -419,33 +420,30 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   }
 
   if (loading) {
-    return <div style={{ padding: 24 }}>Loading brand...</div>
+    return <div className="admin-brand-form-loading">Loading brand...</div>
   }
 
   return (
-    <div style={{
-      padding: 24,
-      minHeight: '100vh',
-      background: mode === 'create' ? 'linear-gradient(180deg, #f6f4ee 0%, #ffffff 100%)' : 'linear-gradient(180deg, #eef3f7 0%, #ffffff 100%)'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div>
+    <div className={`admin-brand-form-page ${mode === 'create' ? 'admin-brand-form-page-create' : 'admin-brand-form-page-edit'}`}>
+      <div className="admin-brand-form-header">
+        <div className="admin-brand-form-header-copy">
           <h2>{title}</h2>
           <p>{subtitle}</p>
         </div>
-        <button type="button" onClick={backToDashboard}>Back to dashboard</button>
+        <button type="button" onClick={backToDashboard} className="admin-brand-form-btn admin-brand-form-btn-ghost">Back to dashboard</button>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16, maxWidth: 980, background: '#fff', padding: 20, borderRadius: 14, boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
-        <section>
+      <form onSubmit={handleSubmit} className="admin-brand-form-shell">
+        <section className="admin-brand-form-section">
           <h3>Brand details</h3>
-          <div>
+          <div className="admin-brand-form-field">
             <label>Brand name</label>
-            <input required value={form.brandName} onChange={e => updateBrand({ brandName: e.target.value })} />
+            <input className="admin-brand-form-control" required value={form.brandName} onChange={e => updateBrand({ brandName: e.target.value })} />
           </div>
-          <div style={{ marginTop: 10 }}>
+          <div className="admin-brand-form-field admin-brand-form-field-spaced">
             <label>Description</label>
             <textarea
+              className="admin-brand-form-control"
               value={form.description ?? ''}
               onChange={e => updateBrand({ description: e.target.value })}
               rows={3}
@@ -454,14 +452,14 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           </div>
         </section>
 
-        <section>
+        <section className="admin-brand-form-section">
           <h3>Scoring rubric</h3>
-          <p>Fixed subcriteria are provided below for each category. Some boxes are numeric, others are simple dropdowns. Sources are attached to the brand (not per criterion).</p>
+          <p className="admin-brand-form-muted">Fixed subcriteria are provided below for each category. Some boxes are numeric, others are simple dropdowns. Sources are attached to the brand (not per criterion).</p>
           {groupedCriteria.map(group => (
-            <div key={group.category} style={{ marginTop: 18, border: '1px solid #e5e5e5', borderRadius: 12, padding: 16 }}>
+            <div key={group.category} className="admin-brand-form-category-block">
               <h4>{categoryLabels[categoryValues.indexOf(group.category as (typeof categoryValues)[number])]}</h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
+              <div className="admin-brand-form-criteria-grid">
                 {group.items.map(def => {
                   const index = (form.criteriaItems ?? []).findIndex(candidate => candidate.category === def.category && candidate.name === def.name)
                   const item = (form.criteriaItems ?? [])[index]
@@ -471,14 +469,15 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                     updateCriterion(index, { numericValue: value ? Number(value) : undefined })
                   }
 
-                return (
-                  <div key={`${def.category}-${def.name}`} style={{ padding: 12, background: '#fafafa', borderRadius: 10, minHeight: 120 }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <label style={{ display: 'block', fontSize: 13, color: '#555' }}>{def.name}</label>
+                  return (
+                  <div key={`${def.category}-${def.name}`} className="admin-brand-form-criterion-card">
+                    <div className="admin-brand-form-criterion-label-wrap">
+                      <label className="admin-brand-form-criterion-label">{def.name}</label>
                     </div>
 
                     {def.inputKind === 'number' ? (
                       <input
+                        className="admin-brand-form-control"
                         type="text"
                         inputMode="decimal"
                         value={inputValue}
@@ -492,6 +491,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                       />
                     ) : (
                       <select
+                        className="admin-brand-form-control"
                         value={inputValue}
                         onChange={e => updateNumericValue(e.target.value)}
                       >
@@ -509,31 +509,16 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           ))}
         </section>
 
-        <section>
+        <section className="admin-brand-form-section">
           <h3>Certifications</h3>
-          <p>Select all certifications that apply. These are displayed on the brand page and do not affect score calculations.</p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-              gap: 10,
-              marginTop: 10,
-            }}
-          >
+          <p className="admin-brand-form-muted">Select all certifications that apply. These are displayed on the brand page and do not affect score calculations.</p>
+          <div className="admin-brand-form-cert-grid">
             {CERTIFICATION_OPTIONS.map(certification => {
               const isChecked = (form.certifications ?? []).some(item => item.name.toLowerCase() === certification.toLowerCase())
               return (
                 <label
                   key={certification}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 10px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: 8,
-                    background: '#fafafa',
-                  }}
+                  className="admin-brand-form-cert-item"
                 >
                   <input
                     type="checkbox"
@@ -547,24 +532,24 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           </div>
         </section>
 
-        <section>
+        <section className="admin-brand-form-section">
           <h3>Evidence sources</h3>
-          <button type="button" onClick={openAddSourceModal}>Add source</button>
+          <button type="button" onClick={openAddSourceModal} className="admin-brand-form-btn admin-brand-form-btn-ghost">Add source</button>
 
           {(form.evidenceSources ?? []).length === 0 ? (
-            <p style={{ color: '#777', marginTop: 10 }}>No sources added yet.</p>
+            <p className="admin-brand-form-muted">No sources added yet.</p>
           ) : (
-            <ul style={{ marginTop: 12, paddingLeft: 18 }}>
+            <ul className="admin-brand-form-source-list">
               {(form.evidenceSources ?? []).map((source, index) => (
-                <li key={`${source.sourceTitle}-${index}`} style={{ marginBottom: 10 }}>
+                <li key={`${source.sourceTitle}-${index}`}>
                   {isWebLink(source.sourceUrl) ? (
                     <a href={source.sourceUrl} target="_blank" rel="noreferrer">{source.sourceTitle}</a>
                   ) : (
                     <span>{source.sourceTitle}</span>
                   )}
-                  <span style={{ marginLeft: 10 }}>
-                    <button type="button" onClick={() => openEditSourceModal(index)} style={{ marginRight: 8 }}>Edit</button>
-                    <button type="button" onClick={() => removeEvidenceSource(index)}>Delete</button>
+                  <span className="admin-brand-form-source-actions">
+                    <button type="button" onClick={() => openEditSourceModal(index)} className="admin-brand-form-btn admin-brand-form-btn-ghost">Edit</button>
+                    <button type="button" onClick={() => removeEvidenceSource(index)} className="admin-brand-form-btn admin-brand-form-btn-danger">Delete</button>
                   </span>
                 </li>
               ))}
@@ -572,38 +557,32 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           )}
         </section>
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p className="admin-brand-form-error">{error}</p>}
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="submit">{mode === 'create' ? 'Create brand' : 'Save changes'}</button>
-          <button type="button" onClick={backToDashboard}>Cancel</button>
+        <div className="admin-brand-form-actions">
+          <button type="submit" className="admin-brand-form-btn admin-brand-form-btn-primary">{mode === 'create' ? 'Create brand' : 'Save changes'}</button>
+          <button type="button" onClick={backToDashboard} className="admin-brand-form-btn admin-brand-form-btn-ghost">Cancel</button>
         </div>
       </form>
 
       {isSourceModalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.35)',
-          display: 'grid',
-          placeItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 18, width: 'min(560px, 92vw)' }}>
-            <h3 style={{ marginTop: 0 }}>{editingSourceIndex === null ? 'Add source' : 'Edit source'}</h3>
+        <div className="admin-brand-form-modal-overlay">
+          <div className="admin-brand-form-modal">
+            <h3>{editingSourceIndex === null ? 'Add source' : 'Edit source'}</h3>
             <label>Source</label>
             <input
+              className="admin-brand-form-control"
               autoFocus
               value={sourceInput}
               onChange={e => setSourceInput(e.target.value)}
               placeholder="Paste a URL or write a source name"
             />
-            <p style={{ color: '#666', fontSize: 13, marginBottom: 0 }}>
+            <p className="admin-brand-form-modal-note">
               Website links become clickable automatically.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
-              <button type="button" onClick={closeSourceModal}>Cancel</button>
-              <button type="button" onClick={saveSourceFromModal} disabled={!sourceInput.trim()}>
+            <div className="admin-brand-form-modal-actions">
+              <button type="button" onClick={closeSourceModal} className="admin-brand-form-btn admin-brand-form-btn-ghost">Cancel</button>
+              <button type="button" onClick={saveSourceFromModal} disabled={!sourceInput.trim()} className="admin-brand-form-btn admin-brand-form-btn-primary">
                 {editingSourceIndex === null ? 'Add' : 'Save'}
               </button>
             </div>

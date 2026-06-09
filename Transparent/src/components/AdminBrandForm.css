@@ -1,0 +1,247 @@
+.admin-brand-form-loading {
+  padding: 24px;
+}
+
+.admin-brand-form-page {
+  padding: 24px;
+  min-height: 100vh;
+}
+
+.admin-brand-form-page-create {
+  background: linear-gradient(180deg, #f6f4ee 0%, #ffffff 100%);
+}
+
+.admin-brand-form-page-edit {
+  background: linear-gradient(180deg, #eef3f7 0%, #ffffff 100%);
+}
+
+.admin-brand-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto 20px;
+  gap: 12px;
+}
+
+.admin-brand-form-header-copy h2 {
+  font-family: 'Georgia', serif;
+  font-size: 42px;
+  color: #1d1b18;
+  margin-bottom: 6px;
+}
+
+.admin-brand-form-header-copy p {
+  color: #676056;
+}
+
+.admin-brand-form-shell {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+.admin-brand-form-section h3 {
+  font-family: 'Georgia', serif;
+  font-size: 24px;
+  color: #1f1d1a;
+  margin-bottom: 8px;
+}
+
+.admin-brand-form-muted {
+  color: #736c61;
+  margin-top: 6px;
+}
+
+.admin-brand-form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-brand-form-field-spaced {
+  margin-top: 10px;
+}
+
+.admin-brand-form-control {
+  border: 1px solid #cfc8bc;
+  background: #ffffff;
+  color: #1f1f1f;
+  font-size: 15px;
+  padding: 11px 12px;
+  font-family: 'Georgia', serif;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.admin-brand-form-control:focus {
+  outline: none;
+  border-color: #1b1b1b;
+  box-shadow: 0 0 0 2px rgba(27, 27, 27, 0.08);
+}
+
+.admin-brand-form-category-block {
+  margin-top: 18px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fffefb;
+}
+
+.admin-brand-form-category-block h4 {
+  font-size: 18px;
+  color: #282521;
+  margin-bottom: 10px;
+}
+
+.admin-brand-form-criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.admin-brand-form-criterion-card {
+  padding: 12px;
+  background: #faf8f4;
+  border: 1px solid #e9e3d8;
+  border-radius: 10px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand-form-criterion-label-wrap {
+  min-height: 3.2em;
+  margin-bottom: 8px;
+}
+
+.admin-brand-form-criterion-label {
+  display: block;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.admin-brand-form-criterion-card .admin-brand-form-control {
+  margin-top: auto;
+}
+
+.admin-brand-form-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.admin-brand-form-cert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.admin-brand-form-source-list {
+  margin-top: 12px;
+  padding-left: 18px;
+}
+
+.admin-brand-form-source-list li {
+  margin-bottom: 10px;
+}
+
+.admin-brand-form-source-actions {
+  margin-left: 10px;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.admin-brand-form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-brand-form-btn {
+  border: 1px solid #cfc7ba;
+  background: #f6f3ed;
+  color: #403c35;
+  padding: 10px 13px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-family: 'Arial', sans-serif;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.admin-brand-form-btn-primary {
+  border-color: #1c1c1c;
+  background: #1c1c1c;
+  color: #ffffff;
+}
+
+.admin-brand-form-btn-danger {
+  border-color: #b6534f;
+  background: #fff7f6;
+  color: #99413e;
+}
+
+.admin-brand-form-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-brand-form-error {
+  color: #a33a34;
+}
+
+.admin-brand-form-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.admin-brand-form-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  width: min(560px, 92vw);
+  border: 1px solid #e2dbcf;
+}
+
+.admin-brand-form-modal h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.admin-brand-form-modal-note {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+.admin-brand-form-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .admin-brand-form-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

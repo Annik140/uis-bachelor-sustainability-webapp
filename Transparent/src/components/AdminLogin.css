@@ -9,11 +9,16 @@
     #fdfcf9;
 }
 
+.admin-login-header-copy {
+  min-width: 0;
+}
+
 .admin-login-card {
   width: min(520px, 100%);
   border: 1px solid #d9d2c5;
   background: #fefdf9;
   box-shadow: 0 12px 32px rgba(37, 31, 20, 0.08);
+  border-radius: 14px;
   padding: 32px 28px 24px;
 }
 
