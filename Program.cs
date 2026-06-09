@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using uis_bachelor_sustainability_webapp.Data;
 using uis_bachelor_sustainability_webapp.Models;
 using uis_bachelor_sustainability_webapp.Services;
@@ -18,8 +20,24 @@ public class Program
         // Add services to the container.
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
+        builder.Services.AddProblemDetails();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.AddPolicy("AdminLoginPolicy", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 8,
+                        Window = TimeSpan.FromMinutes(5),
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                    }));
+        });
         // Authentication: cookie-based admin sign-in
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -75,11 +93,17 @@ public class Program
         {
             app.MapOpenApi();
         }
+        else
+        {
+            app.UseExceptionHandler();
+            app.UseHsts();
+        }
 
         if (!app.Environment.IsDevelopment())
         {
             app.UseHttpsRedirection();
         }
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -152,7 +176,9 @@ public class Program
             await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
             app.Logger.LogInformation("Admin {User} signed in", adminUser);
             return Results.Ok();
-        }).AllowAnonymous();
+        })
+        .RequireRateLimiting("AdminLoginPolicy")
+        .AllowAnonymous();
 
         app.MapPost("/admin/logout", async (HttpContext ctx) =>
         {
