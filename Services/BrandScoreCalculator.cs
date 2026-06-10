@@ -13,7 +13,7 @@ public static class BrandScoreCalculator
         new Dictionary<string, CriterionDefinition>(StringComparer.OrdinalIgnoreCase)
         {
             // Material
-            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, "%"),
+            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, null),
             [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.25m, null),
             [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.25m, "%"),
             [Key("Material", "Certifications")] = new("Material", "Certifications", 0.20m, null),

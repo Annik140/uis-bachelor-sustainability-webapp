@@ -85,6 +85,15 @@ function getSustainabilityColor(scoreOutOfHundred?: number) {
   return '#c35b5b'
 }
 
+function formatSustainabilityScore(scoreOutOfHundred?: number) {
+  const score = normalizeSustainabilityScore(scoreOutOfHundred)
+  if (score === undefined || score === null) {
+    return 'No info / 100'
+  }
+
+  return `${score.toFixed(0)} / 100`
+}
+
 function buildCategoryScores(brand: Brand) {
   return [
     { key: 'Material', label: 'Material', value: brand.materialSustainabilityScore },
@@ -105,9 +114,18 @@ function buildCriteriaByCategory(brand: Brand) {
   return Array.from(groups.entries())
 }
 
+function shouldShowPercentUnit(item: CriterionItem) {
+  if (item.numericValue === undefined || item.numericValue === null) {
+    return false
+  }
+
+  return item.name === 'Recycled content / Preferred material content' || item.name === 'Renewable energy'
+}
+
 function App() {
   const path = window.location.pathname
   const [brands, setBrands] = useState<Brand[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSort, setActiveSort] = useState<DashboardSort>('lastUpdatedDesc')
   const [page, setPage] = useState(1)
@@ -121,6 +139,7 @@ function App() {
   const appliedSort: DashboardSort = normalizedQuery ? 'lastUpdatedDesc' : activeSort
 
   function handleSearchQueryChange(value: string) {
+    setIsLoading(true)
     setSearchQuery(value)
     setPage(1)
     if (value.trim().length > 0 && activeSort !== 'lastUpdatedDesc') {
@@ -129,8 +148,14 @@ function App() {
   }
 
   function handleSortChange(value: DashboardSort) {
+    setIsLoading(true)
     setActiveSort(value)
     setPage(1)
+  }
+
+  function handlePageChange(nextPage: number) {
+    setIsLoading(true)
+    setPage(nextPage)
   }
 
   const visibleBrands = brands
@@ -210,6 +235,7 @@ function App() {
           setTotalCount(0)
           setTotalPages(1)
         })
+        .finally(() => setIsLoading(false))
     }
   }, [appliedSort, normalizedQuery, page, path, pageSize])
 
@@ -250,6 +276,7 @@ function App() {
         brandCount={totalCount}
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
+        isLoading={isLoading}
         activeSort={activeSort}
         onSortChange={handleSortChange}
         lastUpdatedLabel={lastUpdatedLabel}
@@ -257,7 +284,24 @@ function App() {
       
       <main className="app-main">
         <section className="brands-container">
-          {visibleBrands.length === 0 ? (
+          {isLoading && visibleBrands.length === 0 ? (
+            <div className="brands-grid-shell">
+              <div className="brands-grid brands-grid-loading" aria-label="Loading brands">
+                {Array.from({ length: 8 }, (_, index) => (
+                  <article key={`loading-${index}`} className="brand-card brand-card-loading" aria-hidden="true">
+                    <div className="brand-card-top">
+                      <div className="skeleton skeleton-title" />
+                    </div>
+                    <div className="brand-card-body">
+                      <div className="skeleton skeleton-line" />
+                      <div className="skeleton skeleton-line short" />
+                      <div className="skeleton skeleton-line" />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : visibleBrands.length === 0 ? (
             <div className="brands-placeholder">
               <p>{totalCount === 0 ? 'No brands added yet.' : 'No brands match your search.'}</p>
             </div>
@@ -291,14 +335,14 @@ function App() {
                         <div className="score-chip">
                           <p className="score-chip-label">Sustainability</p>
                           <p className="score-chip-value" style={{ color: getSustainabilityColor(brand.sustainabilityScore) }}>
-                            {normalizeSustainabilityScore(brand.sustainabilityScore)?.toFixed(0) ?? 'n/a'} / 100
+                            {formatSustainabilityScore(brand.sustainabilityScore)}
                           </p>
                         </div>
 
                         <div className="score-chip">
                           <p className="score-chip-label">Transparency</p>
                           <p className="score-chip-value score-chip-value-neutral">
-                            {brand.transparencyScore?.toFixed(1) ?? 'n/a'} / 5
+                            {brand.transparencyScore?.toFixed(1) ?? 'No info'} / 5
                           </p>
                           <div className="transparency-track" aria-hidden="true">
                             {Array.from({ length: 5 }, (_, index) => (
@@ -321,13 +365,17 @@ function App() {
             </div>
           )}
 
+          {isLoading && visibleBrands.length > 0 && (
+            <div className="brands-loading-overlay" aria-live="polite">Loading updated brands...</div>
+          )}
+
           {totalPages > 1 && (
             <div className="dashboard-pagination" aria-label="Brand pagination">
-              <button type="button" onClick={() => setPage(current => Math.max(1, current - 1))} disabled={page <= 1}>
+              <button type="button" onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page <= 1}>
                 Previous
               </button>
               <span>Page {page} of {totalPages}</span>
-              <button type="button" onClick={() => setPage(current => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>
+              <button type="button" onClick={() => handlePageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
                 Next
               </button>
             </div>
@@ -352,8 +400,11 @@ function App() {
                 <section className="brand-modal-hero">
                   <div className="hero-score-block">
                     <p className="hero-score-label">Sustainability</p>
-                    <p className="hero-score-value" style={{ color: getSustainabilityColor(selectedBrand.sustainabilityScore) }}>
-                      {normalizeSustainabilityScore(selectedBrand.sustainabilityScore)?.toFixed(0) ?? 'n/a'}
+                    <p
+                      className={`hero-score-value ${normalizeSustainabilityScore(selectedBrand.sustainabilityScore) === undefined ? 'hero-score-value-no-info' : ''}`}
+                      style={{ color: getSustainabilityColor(selectedBrand.sustainabilityScore) }}
+                    >
+                      {normalizeSustainabilityScore(selectedBrand.sustainabilityScore)?.toFixed(0) ?? 'No info'}
                     </p>
                     <p className="hero-score-unit">/ 100</p>
                   </div>
@@ -361,7 +412,7 @@ function App() {
                   <div className="hero-score-block secondary">
                     <p className="hero-score-label">Transparency</p>
                     <p className="hero-score-value">
-                      {selectedBrand.transparencyScore?.toFixed(1) ?? 'n/a'}
+                      {selectedBrand.transparencyScore?.toFixed(1) ?? 'No info'}
                     </p>
                     <p className="hero-score-unit">/ 5</p>
                     <div className="transparency-track transparency-track-hero" aria-hidden="true">
@@ -446,7 +497,7 @@ function App() {
                             {items.map(item => (
                               <li key={item.id}>
                                 <span>{item.name}</span>
-                                <span>{item.numericValue?.toFixed(1) ?? 'n/a'}{item.unit ? ` ${item.unit}` : ''}</span>
+                                <span>{item.numericValue?.toFixed(1) ?? 'No info'}{shouldShowPercentUnit(item) ? ' %' : ''}</span>
                               </li>
                             ))}
                           </ul>

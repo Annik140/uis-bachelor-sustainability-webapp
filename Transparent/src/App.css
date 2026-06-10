@@ -45,11 +45,24 @@ body {
   align-content: start;
 }
 
+.brands-grid-loading {
+  pointer-events: none;
+}
+
 .brands-grid-shell {
   max-height: calc((338px * 3) + (26px * 2));
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 8px;
+  position: relative;
+}
+
+.brands-loading-overlay {
+  margin-top: 12px;
+  color: #6a645b;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 
 .dashboard-pagination {
@@ -90,6 +103,47 @@ body {
   cursor: pointer;
   transform-origin: center;
   transition: outline 200ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.brand-card-loading {
+  cursor: default;
+  transform: none;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+.brand-card-loading:hover {
+  transform: none;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #ece8df 20%, #f7f5ef 50%, #ece8df 80%);
+  background-size: 220% 100%;
+  animation: card-skeleton-shimmer 1.2s infinite;
+}
+
+.skeleton-title {
+  width: 70%;
+  height: 42px;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 14px;
+}
+
+.skeleton-line.short {
+  width: 72%;
+}
+
+@keyframes card-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
 }
 
 .brand-card:hover {
@@ -144,7 +198,13 @@ body {
   font-size: 15px;
   line-height: 1.4;
   color: #615d56;
-  min-height: 42px;
+  min-height: calc(1.4em * 3);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  text-overflow: ellipsis;
 }
 
 .scores-row {
@@ -335,6 +395,12 @@ body {
   font-size: 56px;
   line-height: 1;
   color: #232323;
+}
+
+.hero-score-value-no-info {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 500;
 }
 
 .hero-score-unit {

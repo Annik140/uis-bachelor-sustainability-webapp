@@ -152,6 +152,28 @@
   font-family: 'Arial', sans-serif;
 }
 
+.header-skeleton {
+  display: inline-block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ece8df 20%, #f7f5ef 50%, #ece8df 80%);
+  background-size: 220% 100%;
+  animation: header-skeleton-shimmer 1.2s infinite;
+}
+
+.header-skeleton-number {
+  width: 72px;
+  height: 44px;
+}
+
+@keyframes header-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 40px 20px;

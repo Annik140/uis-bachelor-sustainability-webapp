@@ -6,6 +6,7 @@ type HeaderProps = {
   brandCount: number
   averageSustainability?: number
   dataCoverage?: number
+  isLoading: boolean
   activeSort: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc'
   onSortChange: (value: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc') => void
   lastUpdatedLabel: string
@@ -17,6 +18,7 @@ export default function Header({
   brandCount,
   averageSustainability,
   dataCoverage,
+  isLoading,
   activeSort,
   onSortChange,
   lastUpdatedLabel,
@@ -50,15 +52,15 @@ export default function Header({
         {!isSearching && (
           <div className="stats-container">
             <div className="stat">
-              <div className="stat-number">{brandCount}</div>
+              <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : brandCount}</div>
               <div className="stat-label">BRANDS</div>
             </div>
             <div className="stat">
-              <div className="stat-number">{averageSustainability?.toFixed(0) ?? 'n/a'}</div>
+              <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : (averageSustainability?.toFixed(0) ?? 'n/a')}</div>
               <div className="stat-label">AVG SCORE</div>
             </div>
             <div className="stat">
-              <div className="stat-number">{dataCoverage?.toFixed(0) ?? 'n/a'}%</div>
+              <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : `${dataCoverage?.toFixed(0) ?? 'n/a'}%`}</div>
               <div className="stat-label">AVG DATA COVERAGE</div>
             </div>
           </div>
