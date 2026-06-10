@@ -62,6 +62,13 @@
   text-transform: uppercase;
   font-family: 'Arial', sans-serif;
   cursor: pointer;
+  border-radius: 4px;
+  transition: all 200ms ease;
+}
+
+.filter-chip:focus-visible {
+  outline: 3px solid #1c1c1c;
+  outline-offset: 2px;
 }
 
 .filter-chip-active {
@@ -94,6 +101,12 @@
   background-repeat: no-repeat;
   background-position: 15px center;
   font-family: 'Georgia', serif;
+  transition: box-shadow 200ms ease;
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1), 0 0 0 5px #1f1f1f;
 }
 
 .search-input::placeholder {

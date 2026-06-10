@@ -78,12 +78,13 @@
   font-family: 'Georgia', serif;
   border-radius: 8px;
   width: 100%;
+  transition: all 200ms ease;
 }
 
 .admin-brand-form-control:focus {
   outline: none;
   border-color: #1b1b1b;
-  box-shadow: 0 0 0 2px rgba(27, 27, 27, 0.08);
+  box-shadow: 0 0 0 3px rgba(27, 27, 27, 0.15);
 }
 
 .admin-brand-form-category-block {
@@ -181,6 +182,12 @@
   font-family: 'Arial', sans-serif;
   cursor: pointer;
   border-radius: 8px;
+  transition: outline 200ms ease;
+}
+
+.admin-brand-form-btn:focus-visible {
+  outline: 3px solid #1c1c1c;
+  outline-offset: 2px;
 }
 
 .admin-brand-form-btn-primary {

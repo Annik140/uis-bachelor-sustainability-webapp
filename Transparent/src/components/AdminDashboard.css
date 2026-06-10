@@ -75,6 +75,13 @@
   letter-spacing: 0.8px;
   font-family: 'Arial', sans-serif;
   cursor: pointer;
+  border-radius: 4px;
+  transition: outline 200ms ease;
+}
+
+.admin-btn:focus-visible {
+  outline: 3px solid #1c1c1c;
+  outline-offset: 2px;
 }
 
 .admin-btn-ghost {
