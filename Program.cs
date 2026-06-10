@@ -81,6 +81,7 @@ public class Program
                     options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
                 }
                 options.ExpireTimeSpan = TimeSpan.FromHours(4);
+                options.SlidingExpiration = true;
 
                 // For XHR/API calls, return 401 instead of redirecting to the login page
                 options.Events = new CookieAuthenticationEvents
@@ -201,6 +202,15 @@ public class Program
             return Results.Ok(new
             {
                 token = tokens.RequestToken
+            });
+        }).RequireAuthorization("AdminOnly");
+
+        app.MapGet("/admin/session", (HttpContext ctx) =>
+        {
+            return Results.Ok(new
+            {
+                authenticated = true,
+                username = ctx.User.Identity?.Name
             });
         }).RequireAuthorization("AdminOnly");
 

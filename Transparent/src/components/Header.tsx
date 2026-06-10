@@ -7,6 +7,7 @@ type HeaderProps = {
   averageSustainability?: number
   dataCoverage?: number
   isLoading: boolean
+  showAdminShortcut: boolean
   activeSort: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc'
   onSortChange: (value: 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc') => void
   lastUpdatedLabel: string
@@ -19,6 +20,7 @@ export default function Header({
   averageSustainability,
   dataCoverage,
   isLoading,
+  showAdminShortcut,
   activeSort,
   onSortChange,
   lastUpdatedLabel,
@@ -32,6 +34,18 @@ export default function Header({
   return (
     <header className="header">
       <div className="header-content">
+        {showAdminShortcut && (
+          <button
+            type="button"
+            className="header-admin-shortcut"
+            onClick={() => {
+              window.location.href = '/admin/dashboard'
+            }}
+          >
+            Back To Admin Dashboard
+          </button>
+        )}
+
         <h1 className="header-title">Transparent</h1>
         <p className="header-subtitle">
           A curated database documenting the sustainability practices of fashion brands. Entries represent the clothing brand (manufacturer) and scores reflect their production practices. Search, discover, and make informed choices.

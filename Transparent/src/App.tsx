@@ -131,6 +131,7 @@ function App() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [isAdminSessionActive, setIsAdminSessionActive] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const pageSize = 12
   const editMatch = path.match(/^\/admin\/brands\/(\d+)\/edit$/)
@@ -191,6 +192,47 @@ function App() {
   const dataCoverage = totalCriteriaCount > 0
     ? (filledCriteriaCount / totalCriteriaCount) * 100
     : undefined
+
+  useEffect(() => {
+    if (path.startsWith('/admin')) {
+      return
+    }
+
+    let disposed = false
+
+    const checkAdminSession = async () => {
+      try {
+        const response = await fetch('/admin/session', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store'
+        })
+
+        if (!disposed) {
+          setIsAdminSessionActive(response.ok)
+        }
+      } catch {
+        if (!disposed) {
+          setIsAdminSessionActive(false)
+        }
+      }
+    }
+
+    void checkAdminSession()
+    const intervalId = window.setInterval(() => {
+      void checkAdminSession()
+    }, 60000)
+    const onFocus = () => {
+      void checkAdminSession()
+    }
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      disposed = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [path])
 
   useEffect(() => {
     if (!path.startsWith('/admin')) {
@@ -277,6 +319,7 @@ function App() {
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
         isLoading={isLoading}
+        showAdminShortcut={isAdminSessionActive}
         activeSort={activeSort}
         onSortChange={handleSortChange}
         lastUpdatedLabel={lastUpdatedLabel}

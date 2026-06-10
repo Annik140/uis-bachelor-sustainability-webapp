@@ -9,6 +9,22 @@
   max-width: 1200px;
   margin: 0 auto;
   text-align: center;
+  position: relative;
+}
+
+.header-admin-shortcut {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 1px solid #1e1e1e;
+  background: #1e1e1e;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-family: 'Arial', sans-serif;
+  border-radius: 4px;
 }
 
 .header-title {
@@ -199,6 +215,11 @@
   .stats-container {
     gap: 40px;
     flex-direction: column;
+  }
+
+  .header-admin-shortcut {
+    position: static;
+    margin-bottom: 14px;
   }
 
   .stat-number {
