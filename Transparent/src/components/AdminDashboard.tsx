@@ -43,13 +43,6 @@ export default function AdminDashboard() {
         }
       }
 
-      // Fallback: if protected read endpoint fails unexpectedly, try public read endpoint.
-      const fallback = await fetch('/brands', { cache: 'no-store' })
-      if (fallback.ok) {
-        setBrands(await fallback.json())
-        return
-      }
-
       setError(`Could not load brands (${res.status}).`)
     } catch {
       setError('Could not load brands. Backend may be unavailable.')

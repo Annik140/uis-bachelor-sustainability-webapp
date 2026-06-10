@@ -18,6 +18,7 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        var isLocalLikeEnvironment = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
 
         // Add services to the container.
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -28,15 +29,23 @@ public class Program
             options.HeaderName = "X-CSRF-TOKEN";
             options.Cookie.Name = "sustain_csrf";
             options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = builder.Environment.IsDevelopment()
+            options.Cookie.SameSite = isLocalLikeEnvironment
                 ? SameSiteMode.Lax
                 : SameSiteMode.Strict;
-            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            options.Cookie.SecurePolicy = isLocalLikeEnvironment
                 ? CookieSecurePolicy.None
                 : CookieSecurePolicy.Always;
         });
-        builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase("app-testing"));
+        }
+        else
+        {
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        }
         builder.Services.AddScoped<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
         builder.Services.AddRateLimiter(options =>
         {
@@ -62,7 +71,7 @@ public class Program
                 options.Cookie.HttpOnly = true;
                 // Default to Strict, but relax in development so the Vite proxy and cross-port dev setup can persist cookies.
                 options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
-                if (builder.Environment.IsDevelopment())
+                if (isLocalLikeEnvironment)
                 {
                     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
                     options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.None;
@@ -100,9 +109,19 @@ public class Program
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AdminUser>>();
-            db.Database.Migrate();
+            if (app.Environment.IsEnvironment("Testing"))
+            {
+                db.Database.EnsureCreated();
+            }
+            else
+            {
+                db.Database.Migrate();
+            }
             EnsureAdminBootstrapAccount(db, passwordHasher, app.Configuration, app.Logger);
-            SeedDemoBrands(db);
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                SeedDemoBrands(db);
+            }
         }
 
         // Configure the HTTP request pipeline.
@@ -116,7 +135,7 @@ public class Program
             app.UseHsts();
         }
 
-        if (!app.Environment.IsDevelopment())
+        if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
         {
             app.UseHttpsRedirection();
         }
@@ -303,18 +322,20 @@ public class Program
         }).RequireAuthorization("AdminOnly");
 
         // Admin-protected CRUD endpoints for ClothingBrands
-        app.MapPost("/admin/clothingbrands", async (ClothingBrand input, AppDbContext db) =>
+        app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db) =>
         {
+            var validationErrors = ValidateBrandInput(input);
+            if (validationErrors.Count > 0)
+            {
+                return Results.ValidationProblem(validationErrors);
+            }
+
             var entity = new ClothingBrand
             {
-                BrandName = input.BrandName,
+                BrandName = input.BrandName.Trim(),
                 Description = input.Description?.Trim(),
-                Category = input.Category,
-                MaterialSustainabilityScore = input.MaterialSustainabilityScore,
-                LaborPracticesScore = input.LaborPracticesScore,
-                CarbonFootprintScore = input.CarbonFootprintScore,
-                ProductLongevityScore = input.ProductLongevityScore,
-                EvidenceSourceCount = input.EvidenceSourceCount,
+                Category = input.Category?.Trim(),
+                EvidenceSourceCount = 0,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -330,22 +351,24 @@ public class Program
             return Results.Created($"/brands/{entity.Id}", entity);
         }).RequireAuthorization("AdminOnly");
 
-        app.MapPut("/admin/clothingbrands/{id:int}", async (int id, ClothingBrand input, AppDbContext db) =>
+        app.MapPut("/admin/clothingbrands/{id:int}", async (int id, BrandUpsertDto input, AppDbContext db) =>
         {
+            var validationErrors = ValidateBrandInput(input);
+            if (validationErrors.Count > 0)
+            {
+                return Results.ValidationProblem(validationErrors);
+            }
+
             var existing = await db.ClothingBrands
                 .Include(b => b.EvidenceSources)
                 .Include(b => b.CriteriaItems)
                 .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
             if (existing is null) return Results.NotFound();
-            existing.BrandName = input.BrandName;
+            existing.BrandName = input.BrandName.Trim();
             existing.Description = input.Description?.Trim();
-            existing.Category = input.Category;
-            existing.MaterialSustainabilityScore = input.MaterialSustainabilityScore;
-            existing.LaborPracticesScore = input.LaborPracticesScore;
-            existing.CarbonFootprintScore = input.CarbonFootprintScore;
-            existing.ProductLongevityScore = input.ProductLongevityScore;
-            existing.EvidenceSourceCount = input.EvidenceSourceCount;
+            existing.Category = input.Category?.Trim();
+            existing.EvidenceSourceCount = 0;
             db.BrandEvidenceSources.RemoveRange(existing.EvidenceSources);
             AddEvidenceSources(existing, input);
             db.BrandCriterionItems.RemoveRange(existing.CriteriaItems);
@@ -384,6 +407,93 @@ public class Program
                    HttpMethods.IsPut(request.Method) ||
                    HttpMethods.IsDelete(request.Method) ||
                    HttpMethods.IsPatch(request.Method);
+        }
+
+        static Dictionary<string, string[]> ValidateBrandInput(BrandUpsertDto input)
+        {
+            var errors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+
+            static void AddError(Dictionary<string, string[]> map, string key, string message)
+            {
+                if (map.TryGetValue(key, out var existing))
+                {
+                    map[key] = [.. existing, message];
+                }
+                else
+                {
+                    map[key] = [message];
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(input.BrandName))
+            {
+                AddError(errors, nameof(input.BrandName), "BrandName is required.");
+            }
+            else if (input.BrandName.Trim().Length > 200)
+            {
+                AddError(errors, nameof(input.BrandName), "BrandName must be at most 200 characters.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(input.Description) && input.Description.Trim().Length > 1000)
+            {
+                AddError(errors, nameof(input.Description), "Description must be at most 1000 characters.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(input.Category) && input.Category.Trim().Length > 120)
+            {
+                AddError(errors, nameof(input.Category), "Category must be at most 120 characters.");
+            }
+
+            foreach (var source in input.EvidenceSources ?? [])
+            {
+                if (string.IsNullOrWhiteSpace(source.SourceTitle) || source.SourceTitle.Trim().Length > 250)
+                {
+                    AddError(errors, nameof(input.EvidenceSources), "Each evidence source title is required and must be at most 250 characters.");
+                }
+
+                if (string.IsNullOrWhiteSpace(source.SourceUrl) || source.SourceUrl.Trim().Length > 1000)
+                {
+                    AddError(errors, nameof(input.EvidenceSources), "Each evidence source URL is required and must be at most 1000 characters.");
+                }
+                else if (!Uri.TryCreate(source.SourceUrl.Trim(), UriKind.Absolute, out var uri) ||
+                         (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    AddError(errors, nameof(input.EvidenceSources), "Evidence source URLs must be absolute http/https links.");
+                }
+            }
+
+            foreach (var item in input.CriteriaItems ?? [])
+            {
+                if (string.IsNullOrWhiteSpace(item.Category) || item.Category.Trim().Length > 80)
+                {
+                    AddError(errors, nameof(input.CriteriaItems), "Each criterion category is required and must be at most 80 characters.");
+                }
+
+                if (string.IsNullOrWhiteSpace(item.Name) || item.Name.Trim().Length > 200)
+                {
+                    AddError(errors, nameof(input.CriteriaItems), "Each criterion name is required and must be at most 200 characters.");
+                }
+
+                if (item.NumericValue.HasValue && (item.NumericValue.Value < 0m || item.NumericValue.Value > 100m))
+                {
+                    AddError(errors, nameof(input.CriteriaItems), "Criterion numeric values must be in range 0 to 100.");
+                }
+
+                if (item.Weight.HasValue && (item.Weight.Value < 0.1m || item.Weight.Value > 10m))
+                {
+                    AddError(errors, nameof(input.CriteriaItems), "Criterion weights must be in range 0.1 to 10.");
+                }
+            }
+
+            foreach (var certification in input.Certifications ?? [])
+            {
+                if (string.IsNullOrWhiteSpace(certification.Name) || certification.Name.Trim().Length > 120)
+                {
+                    AddError(errors, nameof(input.Certifications), "Each certification name is required and must be at most 120 characters.");
+                }
+            }
+
+            return errors;
         }
 
         static void EnsureAdminBootstrapAccount(AppDbContext db, IPasswordHasher<AdminUser> passwordHasher, IConfiguration configuration, ILogger logger)
@@ -432,7 +542,7 @@ public class Program
             logger.LogInformation("Bootstrap admin user {User} was created.", adminUser.Username);
         }
 
-        static void AddEvidenceSources(ClothingBrand target, ClothingBrand input)
+        static void AddEvidenceSources(ClothingBrand target, BrandUpsertDto input)
         {
             if (input.EvidenceSources is null)
             {
@@ -455,7 +565,7 @@ public class Program
             target.EvidenceSourceCount = Math.Max(target.EvidenceSourceCount, target.EvidenceSources.Count);
         }
 
-        static void AddCriteriaItems(ClothingBrand target, ClothingBrand input)
+        static void AddCriteriaItems(ClothingBrand target, BrandUpsertDto input)
         {
             if (input.CriteriaItems is null)
             {
@@ -470,7 +580,7 @@ public class Program
                     Name = criterion.Name.Trim(),
                     NumericValue = criterion.NumericValue,
                     Unit = criterion.Unit?.Trim(),
-                    Weight = criterion.Weight,
+                    Weight = criterion.Weight ?? 1m,
                     Notes = criterion.Notes?.Trim(),
                     CreatedAtUtc = DateTime.UtcNow
                 });
@@ -479,7 +589,7 @@ public class Program
             BrandScoreCalculator.NormalizeCriteria(target);
         }
 
-        static void AddCertifications(ClothingBrand target, ClothingBrand input)
+        static void AddCertifications(ClothingBrand target, BrandUpsertDto input)
         {
             if (input.Certifications is null)
             {
