@@ -25,6 +25,7 @@ body {
   margin: 0;
   background-color: #ffffff;
   color: #1f1f1f;
+  cursor: default;
 }
 
 a {
@@ -37,4 +38,13 @@ textarea,
 select,
 button {
   color: #1f1f1f;
+}
+
+button {
+  transition: filter 180ms ease, transform 180ms ease;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(0.96);
+  transform: translateY(-1px);
 }

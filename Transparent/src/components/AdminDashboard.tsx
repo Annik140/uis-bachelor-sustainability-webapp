@@ -104,7 +104,12 @@ export default function AdminDashboard() {
     window.location.href = `/admin/brands/${id}/edit`
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: number, brandName: string) {
+    const confirmed = window.confirm(`Delete brand "${brandName}"? This action cannot be undone.`)
+    if (!confirmed) {
+      return
+    }
+
     const headers = await withCsrfHeaders()
     const response = await fetch(`/admin/clothingbrands/${id}`, { method: 'DELETE', credentials: 'include', headers })
     if (response.status === 401) {
@@ -207,7 +212,7 @@ export default function AdminDashboard() {
 
                   <div className="admin-brand-actions">
                     <button type="button" onClick={() => handleEditBrand(brand.id)} className="admin-btn admin-btn-ghost">Edit</button>
-                    <button type="button" onClick={() => handleDelete(brand.id)} className="admin-btn admin-btn-danger">Delete</button>
+                    <button type="button" onClick={() => handleDelete(brand.id, brand.brandName)} className="admin-btn admin-btn-danger">Delete</button>
                   </div>
                 </article>
               ))}

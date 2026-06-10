@@ -95,18 +95,27 @@
   border: 2px solid #000;
   background-color: #ffffff;
   color: #1f1f1f;
-  caret-color: #1f1f1f;
+  caret-color: #111111 !important;
   padding-left: 50px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.35-4.35'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: 15px center;
   font-family: 'Georgia', serif;
+  cursor: text;
   transition: box-shadow 200ms ease;
+}
+
+.search-input:hover,
+.search-input:focus,
+.search-input:active {
+  caret-color: #111111 !important;
+  -webkit-text-fill-color: #1f1f1f;
 }
 
 .search-input:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1), 0 0 0 5px #1f1f1f;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.16);
+  caret-color: #111111;
 }
 
 .search-input::placeholder {

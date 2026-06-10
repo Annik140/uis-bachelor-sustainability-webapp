@@ -88,12 +88,29 @@ body {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: outline 200ms ease;
+  transform-origin: center;
+  transition: outline 200ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.brand-card:hover {
+  transform: scale(1.015);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
 }
 
 .brand-card:focus-visible {
   outline: 3px solid #1c1c1c;
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-card,
+  .dashboard-pagination button {
+    transition: none;
+  }
+
+  .brand-card:hover {
+    transform: none;
+  }
 }
 
 .brand-card-top {
