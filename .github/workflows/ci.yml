@@ -29,7 +29,23 @@ jobs:
         run: dotnet build uis-bachelor-sustainability-webapp.csproj --configuration Release --no-restore
 
       - name: Run backend tests
-        run: dotnet test tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --no-build
+        run: dotnet test tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: '**/TestResults/**'
+          retention-days: 30
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: '**/TestResults/**/*.trx'
+          check_name: Backend Test Results
+          comment_mode: always
 
   frontend:
     name: Frontend Lint and Build
@@ -57,3 +73,10 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: Transparent/dist
+          retention-days: 30
