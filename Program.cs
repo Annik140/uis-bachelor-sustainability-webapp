@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
@@ -23,6 +24,7 @@ public class Program
         builder.Services.AddProblemDetails();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddScoped<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
         builder.Services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -84,7 +86,9 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AdminUser>>();
             db.Database.Migrate();
+            EnsureAdminBootstrapAccount(db, passwordHasher, app.Configuration, app.Logger);
             SeedDemoBrands(db);
         }
 
@@ -147,38 +151,105 @@ public class Program
         .RequireAuthorization("AdminOnly");
 
         // Admin login endpoint, signs in cookie if credentials match env vars
-        app.MapPost("/admin/login", async (HttpContext ctx) =>
+        app.MapPost("/admin/login", async (HttpContext ctx, AppDbContext db, IPasswordHasher<AdminUser> passwordHasher) =>
         {
             var dto = await ctx.Request.ReadFromJsonAsync<Models.LoginDto>();
-            var adminUser = app.Configuration["ADMIN_USER"] ?? Environment.GetEnvironmentVariable("ADMIN_USER");
-            var adminPass = app.Configuration["ADMIN_PASSWORD"] ?? Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+            var username = dto?.Username?.Trim();
+            var password = dto?.Password ?? string.Empty;
 
-            if (string.IsNullOrEmpty(adminUser) || string.IsNullOrEmpty(adminPass))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                app.Logger.LogWarning("Admin credentials not configured (ADMIN_USER/ADMIN_PASSWORD)");
-                return Results.Problem("Admin credentials not configured on the server.", statusCode: 500);
-            }
-
-            if (dto is null || dto.Username != adminUser || dto.Password != adminPass)
-            {
-                app.Logger.LogWarning("Failed admin login attempt for user {User}", dto?.Username ?? "(null)");
                 return Results.Unauthorized();
             }
 
+            var normalizedUsername = NormalizeUsername(username);
+            var adminUser = await db.AdminUsers.FirstOrDefaultAsync(u =>
+                u.NormalizedUsername == normalizedUsername && u.IsActive);
+
+            if (adminUser is null)
+            {
+                app.Logger.LogWarning("Failed admin login attempt for user {User}", username);
+                return Results.Unauthorized();
+            }
+
+            var verification = passwordHasher.VerifyHashedPassword(adminUser, adminUser.PasswordHash, password);
+            if (verification == PasswordVerificationResult.Failed)
+            {
+                app.Logger.LogWarning("Failed admin login attempt for user {User}", username);
+                return Results.Unauthorized();
+            }
+
+            if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, password);
+            }
+
+            adminUser.LastLoginAtUtc = DateTime.UtcNow;
+            adminUser.UpdatedAtUtc = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, adminUser),
+                new Claim(ClaimTypes.NameIdentifier, adminUser.Id.ToString()),
+                new Claim(ClaimTypes.Name, adminUser.Username),
                 new Claim(ClaimTypes.Role, "Admin")
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-            app.Logger.LogInformation("Admin {User} signed in", adminUser);
+            app.Logger.LogInformation("Admin {User} signed in", adminUser.Username);
             return Results.Ok();
         })
         .RequireRateLimiting("AdminLoginPolicy")
         .AllowAnonymous();
+
+        app.MapPost("/admin/users", async (Models.CreateAdminUserDto dto, AppDbContext db, IPasswordHasher<AdminUser> passwordHasher) =>
+        {
+            var username = dto.Username?.Trim();
+            var password = dto.Password ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(username) || password.Length < 12)
+            {
+                return Results.BadRequest(new
+                {
+                    message = "Username is required and password must be at least 12 characters."
+                });
+            }
+
+            var normalizedUsername = NormalizeUsername(username);
+            var exists = await db.AdminUsers.AnyAsync(user => user.NormalizedUsername == normalizedUsername);
+            if (exists)
+            {
+                return Results.Conflict(new
+                {
+                    message = "An admin with that username already exists."
+                });
+            }
+
+            var adminUser = new AdminUser
+            {
+                Username = username,
+                NormalizedUsername = normalizedUsername,
+                PasswordHash = string.Empty,
+                IsActive = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+            };
+
+            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, password);
+
+            db.AdminUsers.Add(adminUser);
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/admin/users/{adminUser.Id}", new
+            {
+                adminUser.Id,
+                adminUser.Username,
+                adminUser.IsActive,
+                adminUser.CreatedAtUtc
+            });
+        }).RequireAuthorization("AdminOnly");
 
         app.MapPost("/admin/logout", async (HttpContext ctx) =>
         {
@@ -251,6 +322,57 @@ public class Program
         }).RequireAuthorization("AdminOnly");
 
         app.Run();
+
+        static string NormalizeUsername(string username)
+        {
+            return username.Trim().ToUpperInvariant();
+        }
+
+        static void EnsureAdminBootstrapAccount(AppDbContext db, IPasswordHasher<AdminUser> passwordHasher, IConfiguration configuration, ILogger logger)
+        {
+            var bootstrapUser =
+                configuration["ADMIN_BOOTSTRAP_USER"] ??
+                Environment.GetEnvironmentVariable("ADMIN_BOOTSTRAP_USER") ??
+                configuration["ADMIN_USER"] ??
+                Environment.GetEnvironmentVariable("ADMIN_USER");
+
+            var bootstrapPassword =
+                configuration["ADMIN_BOOTSTRAP_PASSWORD"] ??
+                Environment.GetEnvironmentVariable("ADMIN_BOOTSTRAP_PASSWORD") ??
+                configuration["ADMIN_PASSWORD"] ??
+                Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+
+            if (string.IsNullOrWhiteSpace(bootstrapUser) || string.IsNullOrWhiteSpace(bootstrapPassword))
+            {
+                if (!db.AdminUsers.Any())
+                {
+                    logger.LogWarning("No admin users exist and no bootstrap credentials were configured.");
+                }
+                return;
+            }
+
+            var normalizedUsername = NormalizeUsername(bootstrapUser);
+            var exists = db.AdminUsers.Any(user => user.NormalizedUsername == normalizedUsername);
+            if (exists)
+            {
+                return;
+            }
+
+            var adminUser = new AdminUser
+            {
+                Username = bootstrapUser.Trim(),
+                NormalizedUsername = normalizedUsername,
+                PasswordHash = string.Empty,
+                IsActive = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+            };
+
+            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, bootstrapPassword);
+            db.AdminUsers.Add(adminUser);
+            db.SaveChanges();
+            logger.LogInformation("Bootstrap admin user {User} was created.", adminUser.Username);
+        }
 
         static void AddEvidenceSources(ClothingBrand target, ClothingBrand input)
         {

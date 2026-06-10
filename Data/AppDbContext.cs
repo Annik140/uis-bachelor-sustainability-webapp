@@ -5,6 +5,7 @@ namespace uis_bachelor_sustainability_webapp.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
     public DbSet<ClothingBrand> ClothingBrands => Set<ClothingBrand>();
     public DbSet<BrandEvidenceSource> BrandEvidenceSources => Set<BrandEvidenceSource>();
     public DbSet<BrandCriterionItem> BrandCriterionItems => Set<BrandCriterionItem>();
@@ -12,6 +13,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AdminUser>(entity =>
+        {
+            entity.Property(e => e.Username).HasMaxLength(120).IsRequired();
+            entity.Property(e => e.NormalizedUsername).HasMaxLength(120).IsRequired();
+            entity.Property(e => e.PasswordHash).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAtUtc).HasDefaultValueSql("NOW()");
+            entity.HasIndex(e => e.NormalizedUsername).IsUnique();
+        });
+
         modelBuilder.Entity<ClothingBrand>(entity =>
         {
             entity.Property(e => e.BrandName).HasMaxLength(200).IsRequired();
