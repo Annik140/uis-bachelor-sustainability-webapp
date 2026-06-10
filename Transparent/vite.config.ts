@@ -13,7 +13,7 @@ export default defineConfig({
         secure: false,
         // Only bypass real frontend routes. Admin API GETs (e.g. /admin/clothingbrands)
         // must still be proxied to the backend.
-        bypass(req, _res, _opt) {
+        bypass(req) {
           if (req.method !== 'GET') {
             return;
           }

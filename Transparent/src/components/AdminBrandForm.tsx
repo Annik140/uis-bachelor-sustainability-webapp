@@ -217,7 +217,6 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
   useEffect(() => {
     if (mode !== 'edit' || !brandId) {
-      setLoading(false)
       return
     }
 

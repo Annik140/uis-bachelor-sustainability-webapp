@@ -114,6 +114,13 @@ function App() {
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const appliedSort: DashboardSort = normalizedQuery ? 'lastUpdatedDesc' : activeSort
 
+  function handleSearchQueryChange(value: string) {
+    setSearchQuery(value)
+    if (value.trim().length > 0 && activeSort !== 'lastUpdatedDesc') {
+      setActiveSort('lastUpdatedDesc')
+    }
+  }
+
   const searchedBrands = normalizedQuery
     ? brands.filter(brand =>
         brand.brandName.toLowerCase().includes(normalizedQuery) ||
@@ -185,12 +192,6 @@ function App() {
   }, [path])
 
   useEffect(() => {
-    if (normalizedQuery && activeSort !== 'lastUpdatedDesc') {
-      setActiveSort('lastUpdatedDesc')
-    }
-  }, [normalizedQuery, activeSort])
-
-  useEffect(() => {
     if (!selectedBrand) {
       return
     }
@@ -223,7 +224,7 @@ function App() {
     <>
       <Header
         searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
+        onSearchQueryChange={handleSearchQueryChange}
         brandCount={brands.length}
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
