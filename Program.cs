@@ -166,13 +166,8 @@ public class Program
             await next();
         });
 
-        app.MapGet("/brands", async (AppDbContext db) =>
-            await db.ClothingBrands
-                .Include(x => x.EvidenceSources)
-                .Include(x => x.CriteriaItems)
-                .Include(x => x.Certifications)
-                .OrderByDescending(x => x.CreatedAtUtc)
-                .ToListAsync());
+        app.MapGet("/brands", async (AppDbContext db, int page = 1, int pageSize = 12, string? q = null, string? sort = "lastUpdatedDesc") =>
+            Results.Ok(await GetPagedBrands(db, page, pageSize, q, sort)));
 
         app.MapGet("/brands/{id:int}", async (int id, AppDbContext db) =>
         {
@@ -185,13 +180,8 @@ public class Program
         })
         .WithName("GetBrandById");
 
-        app.MapGet("/admin/clothingbrands", async (AppDbContext db) =>
-            await db.ClothingBrands
-                .Include(x => x.EvidenceSources)
-                .Include(x => x.CriteriaItems)
-                .Include(x => x.Certifications)
-                .OrderByDescending(x => x.CreatedAtUtc)
-                .ToListAsync())
+        app.MapGet("/admin/clothingbrands", async (AppDbContext db, int page = 1, int pageSize = 12, string? q = null, string? sort = "lastUpdatedDesc") =>
+            Results.Ok(await GetPagedBrands(db, page, pageSize, q, sort)))
             .RequireAuthorization("AdminOnly");
 
         app.MapGet("/admin/clothingbrands/{id:int}", async (int id, AppDbContext db) =>
@@ -407,6 +397,55 @@ public class Program
                    HttpMethods.IsPut(request.Method) ||
                    HttpMethods.IsDelete(request.Method) ||
                    HttpMethods.IsPatch(request.Method);
+        }
+
+        static async Task<PagedResult<ClothingBrand>> GetPagedBrands(AppDbContext db, int page, int pageSize, string? searchQuery, string? sort)
+        {
+            var safePageSize = Math.Clamp(pageSize, 1, 100);
+            var normalizedPage = Math.Max(page, 1);
+            var normalizedQuery = searchQuery?.Trim();
+
+            var filtered = db.ClothingBrands.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(normalizedQuery))
+            {
+                var query = normalizedQuery.ToLower();
+                filtered = filtered.Where(brand =>
+                    brand.BrandName.ToLower().Contains(query) ||
+                    (brand.Category != null && brand.Category.ToLower().Contains(query)));
+            }
+
+            var totalCount = await filtered.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)safePageSize));
+            var safePage = Math.Min(normalizedPage, totalPages);
+
+            var ordered = ApplyBrandSorting(filtered, sort);
+            var items = await ordered
+                .Include(brand => brand.EvidenceSources)
+                .Include(brand => brand.CriteriaItems)
+                .Include(brand => brand.Certifications)
+                .Skip((safePage - 1) * safePageSize)
+                .Take(safePageSize)
+                .ToListAsync();
+
+            return new PagedResult<ClothingBrand>
+            {
+                Items = items,
+                Page = safePage,
+                PageSize = safePageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+            };
+        }
+
+        static IQueryable<ClothingBrand> ApplyBrandSorting(IQueryable<ClothingBrand> query, string? sort)
+        {
+            return (sort ?? "lastUpdatedDesc").ToLowerInvariant() switch
+            {
+                "sustainabilitydesc" => query.OrderByDescending(brand => brand.SustainabilityScore).ThenBy(brand => brand.BrandName),
+                "transparencydesc" => query.OrderByDescending(brand => brand.TransparencyScore).ThenBy(brand => brand.BrandName),
+                "alphabeticalasc" => query.OrderBy(brand => brand.BrandName),
+                _ => query.OrderByDescending(brand => brand.UpdatedAtUtc).ThenBy(brand => brand.BrandName),
+            };
         }
 
         static Dictionary<string, string[]> ValidateBrandInput(BrandUpsertDto input)

@@ -2,3 +2,13 @@ bin/
 obj/
 .env
 .env.local
+Transparent/node_modules/
+Transparent/dist/
+tests/**/TestResults/
+**/TestResults/
+**/coverage/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+.DS_Store

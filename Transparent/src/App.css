@@ -52,6 +52,32 @@ body {
   padding-right: 8px;
 }
 
+.dashboard-pagination {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  color: #4a4640;
+  font-size: 14px;
+}
+
+.dashboard-pagination button {
+  border: 1px solid #cfc8bc;
+  background: #f8f7f4;
+  color: #2f2c28;
+  padding: 8px 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  cursor: pointer;
+}
+
+.dashboard-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .brand-card {
   width: 270px;
   min-height: 338px;

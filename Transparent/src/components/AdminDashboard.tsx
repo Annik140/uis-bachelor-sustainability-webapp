@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './AdminDashboard.css'
 import { clearCsrfToken, withCsrfHeaders } from '../utils/csrf'
 
@@ -12,6 +12,14 @@ type Brand = {
   consSummary?: string
 }
 
+type PagedResponse<T> = {
+  items: T[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+}
+
 export default function AdminDashboard() {
   const BRANDS_SCROLL_THRESHOLD = 8
 
@@ -19,17 +27,28 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 12
+  const normalizedQuery = searchQuery.trim().toLowerCase()
 
-  useEffect(() => {
-    fetchBrands()
-  }, [])
-
-  async function fetchBrands() {
+  const fetchBrands = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const res = await fetch('/admin/clothingbrands', { cache: 'no-store', credentials: 'include' })
+      const query = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        sort: 'lastUpdatedDesc',
+      })
+
+      if (normalizedQuery) {
+        query.set('q', normalizedQuery)
+      }
+
+      const res = await fetch(`/admin/clothingbrands?${query.toString()}`, { cache: 'no-store', credentials: 'include' })
       if (res.status === 401) {
         window.location.href = '/admin/login'
         return
@@ -38,7 +57,22 @@ export default function AdminDashboard() {
       if (res.ok) {
         const contentType = res.headers.get('content-type') ?? ''
         if (contentType.includes('application/json')) {
-          setBrands(await res.json())
+          const payload = await res.json() as PagedResponse<Brand> | Brand[]
+          if (Array.isArray(payload)) {
+            setBrands(payload)
+            setTotalCount(payload.length)
+            setTotalPages(1)
+            setPage(1)
+            return
+          }
+
+          setBrands(payload.items ?? [])
+          setTotalCount(payload.totalCount ?? 0)
+          setTotalPages(Math.max(1, payload.totalPages ?? 1))
+          setPage(previous => {
+            const nextPage = Math.max(1, payload.page ?? 1)
+            return previous === nextPage ? previous : nextPage
+          })
           return
         }
       }
@@ -46,10 +80,17 @@ export default function AdminDashboard() {
       setError(`Could not load brands (${res.status}).`)
     } catch {
       setError('Could not load brands. Backend may be unavailable.')
+      setBrands([])
+      setTotalCount(0)
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
-  }
+  }, [normalizedQuery, page, pageSize])
+
+  useEffect(() => {
+    fetchBrands()
+  }, [fetchBrands])
 
   function handleAddBrand() {
     window.location.href = '/admin/brands/new'
@@ -94,13 +135,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const normalizedQuery = searchQuery.trim().toLowerCase()
-  const visibleBrands = normalizedQuery
-    ? brands.filter(brand =>
-        brand.brandName.toLowerCase().includes(normalizedQuery) ||
-        (brand.category ?? '').toLowerCase().includes(normalizedQuery)
-      )
-    : brands
+  const visibleBrands = brands
 
   return (
     <main className="admin-dashboard-page">
@@ -127,7 +162,7 @@ export default function AdminDashboard() {
         <section className="admin-brands-section">
           <div className="admin-brands-top">
             <h2 className="admin-brands-heading">Created brands</h2>
-            <p className="admin-brands-count">{brands.length} total</p>
+            <p className="admin-brands-count">{totalCount} total</p>
           </div>
 
           <div className="admin-add-brand-row">
@@ -141,7 +176,10 @@ export default function AdminDashboard() {
               type="text"
               placeholder="Search by brand or category..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => {
+                setSearchQuery(e.target.value)
+                setPage(1)
+              }}
               aria-label="Search created brands"
             />
           </form>
@@ -149,7 +187,7 @@ export default function AdminDashboard() {
           {loading && <p className="admin-feedback">Loading brands...</p>}
           {error && <p className="admin-feedback admin-feedback-error">{error}</p>}
 
-          {!loading && !error && brands.length === 0 ? (
+          {!loading && !error && totalCount === 0 ? (
             <p className="admin-feedback">No brands created yet.</p>
           ) : !loading && !error && visibleBrands.length === 0 ? (
             <p className="admin-feedback">No brands match your search.</p>
@@ -175,6 +213,18 @@ export default function AdminDashboard() {
               ))}
             </div>
           ) : null}
+
+          {!loading && !error && totalPages > 1 && (
+            <div className="admin-pagination" aria-label="Admin brand pagination">
+              <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setPage(current => Math.max(1, current - 1))} disabled={page <= 1}>
+                Previous
+              </button>
+              <span>Page {page} of {totalPages}</span>
+              <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setPage(current => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>
+                Next
+              </button>
+            </div>
+          )}
         </section>
       </section>
     </main>

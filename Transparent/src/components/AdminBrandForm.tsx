@@ -201,7 +201,8 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   const [loading, setLoading] = useState(mode === 'edit')
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false)
   const [editingSourceIndex, setEditingSourceIndex] = useState<number | null>(null)
-  const [sourceInput, setSourceInput] = useState('')
+  const [sourceTitleInput, setSourceTitleInput] = useState('')
+  const [sourceUrlInput, setSourceUrlInput] = useState('')
 
   const title = mode === 'create' ? 'Add new brand' : 'Edit brand'
   const subtitle = mode === 'create'
@@ -280,7 +281,8 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
   function openAddSourceModal() {
     setEditingSourceIndex(null)
-    setSourceInput('')
+    setSourceTitleInput('')
+    setSourceUrlInput('')
     setIsSourceModalOpen(true)
   }
 
@@ -288,18 +290,19 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     const source = (form.evidenceSources ?? [])[index]
     if (!source) return
     setEditingSourceIndex(index)
-    setSourceInput(source.sourceTitle || source.sourceUrl || '')
+    setSourceTitleInput(source.sourceTitle ?? '')
+    setSourceUrlInput(source.sourceUrl ?? '')
     setIsSourceModalOpen(true)
   }
 
   function saveSourceFromModal() {
-    const value = sourceInput.trim()
-    if (!value) return
+    const title = sourceTitleInput.trim()
+    const sourceUrl = sourceUrlInput.trim()
+    if (!title || !sourceUrl || !isWebLink(sourceUrl)) return
 
     const sourceRecord: EvidenceSource = {
-      sourceTitle: value,
-      // Keep backend compatibility (SourceUrl required) while only linking valid web URLs.
-      sourceUrl: isWebLink(value) ? value : value,
+      sourceTitle: title,
+      sourceUrl,
       sourceType: '',
       notes: ''
     }
@@ -317,13 +320,15 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     updateBrand({ evidenceSources })
     setIsSourceModalOpen(false)
     setEditingSourceIndex(null)
-    setSourceInput('')
+    setSourceTitleInput('')
+    setSourceUrlInput('')
   }
 
   function closeSourceModal() {
     setIsSourceModalOpen(false)
     setEditingSourceIndex(null)
-    setSourceInput('')
+    setSourceTitleInput('')
+    setSourceUrlInput('')
   }
 
   function removeEvidenceSource(index: number) {
@@ -571,20 +576,27 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
         <div className="admin-brand-form-modal-overlay">
           <div className="admin-brand-form-modal">
             <h3>{editingSourceIndex === null ? 'Add source' : 'Edit source'}</h3>
-            <label>Source</label>
+            <label>Source title</label>
             <input
               className="admin-brand-form-control"
               autoFocus
-              value={sourceInput}
-              onChange={e => setSourceInput(e.target.value)}
-              placeholder="Paste a URL or write a source name"
+              value={sourceTitleInput}
+              onChange={e => setSourceTitleInput(e.target.value)}
+              placeholder="Name shown in the evidence list"
+            />
+            <label>Source URL</label>
+            <input
+              className="admin-brand-form-control"
+              value={sourceUrlInput}
+              onChange={e => setSourceUrlInput(e.target.value)}
+              placeholder="https://example.com/report"
             />
             <p className="admin-brand-form-modal-note">
-              Website links become clickable automatically.
+              Source URL must be an absolute http/https link.
             </p>
             <div className="admin-brand-form-modal-actions">
               <button type="button" onClick={closeSourceModal} className="admin-brand-form-btn admin-brand-form-btn-ghost">Cancel</button>
-              <button type="button" onClick={saveSourceFromModal} disabled={!sourceInput.trim()} className="admin-brand-form-btn admin-brand-form-btn-primary">
+              <button type="button" onClick={saveSourceFromModal} disabled={!sourceTitleInput.trim() || !isWebLink(sourceUrlInput.trim())} className="admin-brand-form-btn admin-brand-form-btn-primary">
                 {editingSourceIndex === null ? 'Add' : 'Save'}
               </button>
             </div>

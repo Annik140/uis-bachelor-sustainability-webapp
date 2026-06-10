@@ -29,7 +29,7 @@ jobs:
         run: dotnet build uis-bachelor-sustainability-webapp.csproj --configuration Release --no-restore
 
       - name: Run backend tests
-        run: dotnet test tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+        run: dotnet test tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
 
       - name: Upload test results
         if: always()

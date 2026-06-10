@@ -51,10 +51,12 @@ type CriterionItem = {
 
 type DashboardSort = 'lastUpdatedDesc' | 'sustainabilityDesc' | 'transparencyDesc' | 'alphabeticalAsc'
 
-function toUpdatedAtMs(value?: string) {
-  if (!value) return 0
-  const parsed = new Date(value).getTime()
-  return Number.isNaN(parsed) ? 0 : parsed
+type PagedResponse<T> = {
+  items: T[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
 }
 
 function normalizeSustainabilityScore(scoreOutOfHundred?: number) {
@@ -108,7 +110,11 @@ function App() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSort, setActiveSort] = useState<DashboardSort>('lastUpdatedDesc')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const pageSize = 12
   const editMatch = path.match(/^\/admin\/brands\/(\d+)\/edit$/)
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
@@ -116,39 +122,18 @@ function App() {
 
   function handleSearchQueryChange(value: string) {
     setSearchQuery(value)
+    setPage(1)
     if (value.trim().length > 0 && activeSort !== 'lastUpdatedDesc') {
       setActiveSort('lastUpdatedDesc')
     }
   }
 
-  const searchedBrands = normalizedQuery
-    ? brands.filter(brand =>
-        brand.brandName.toLowerCase().includes(normalizedQuery) ||
-        (brand.category ?? '').toLowerCase().includes(normalizedQuery)
-      )
-    : brands
+  function handleSortChange(value: DashboardSort) {
+    setActiveSort(value)
+    setPage(1)
+  }
 
-  const visibleBrands = [...searchedBrands].sort((a, b) => {
-    if (appliedSort === 'lastUpdatedDesc') {
-      const updatedDiff = toUpdatedAtMs(b.updatedAtUtc) - toUpdatedAtMs(a.updatedAtUtc)
-      if (updatedDiff !== 0) return updatedDiff
-      return a.brandName.localeCompare(b.brandName)
-    }
-
-    if (appliedSort === 'sustainabilityDesc') {
-      return (normalizeSustainabilityScore(b.sustainabilityScore) ?? -1) - (normalizeSustainabilityScore(a.sustainabilityScore) ?? -1)
-    }
-
-    if (appliedSort === 'transparencyDesc') {
-      return (b.transparencyScore ?? -1) - (a.transparencyScore ?? -1)
-    }
-
-    if (appliedSort === 'alphabeticalAsc') {
-      return a.brandName.localeCompare(b.brandName)
-    }
-
-    return a.brandName.localeCompare(b.brandName)
-  })
+  const visibleBrands = brands
 
   const latestUpdateMs = brands.reduce((latest, brand) => {
     if (!brand.updatedAtUtc) return latest
@@ -184,12 +169,49 @@ function App() {
 
   useEffect(() => {
     if (!path.startsWith('/admin')) {
-      fetch('/brands')
-        .then(response => response.ok ? response.json() : [])
-        .then(setBrands)
-        .catch(() => setBrands([]))
+      const query = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        sort: appliedSort,
+      })
+
+      if (normalizedQuery) {
+        query.set('q', normalizedQuery)
+      }
+
+      fetch(`/brands?${query.toString()}`)
+        .then(response => response.ok ? response.json() : null)
+        .then((data: PagedResponse<Brand> | Brand[] | null) => {
+          if (!data) {
+            setBrands([])
+            setTotalCount(0)
+            setTotalPages(1)
+            return
+          }
+
+          if (Array.isArray(data)) {
+            setBrands(data)
+            setTotalCount(data.length)
+            setTotalPages(1)
+            setPage(1)
+            return
+          }
+
+          setBrands(data.items ?? [])
+          setTotalCount(data.totalCount ?? 0)
+          setTotalPages(Math.max(1, data.totalPages ?? 1))
+          setPage(previous => {
+            const nextPage = Math.max(1, data.page ?? 1)
+            return previous === nextPage ? previous : nextPage
+          })
+        })
+        .catch(() => {
+          setBrands([])
+          setTotalCount(0)
+          setTotalPages(1)
+        })
     }
-  }, [path])
+  }, [appliedSort, normalizedQuery, page, path, pageSize])
 
   useEffect(() => {
     if (!selectedBrand) {
@@ -225,11 +247,11 @@ function App() {
       <Header
         searchQuery={searchQuery}
         onSearchQueryChange={handleSearchQueryChange}
-        brandCount={brands.length}
+        brandCount={totalCount}
         averageSustainability={averageSustainability}
         dataCoverage={dataCoverage}
         activeSort={activeSort}
-        onSortChange={setActiveSort}
+        onSortChange={handleSortChange}
         lastUpdatedLabel={lastUpdatedLabel}
       />
       
@@ -237,7 +259,7 @@ function App() {
         <section className="brands-container">
           {visibleBrands.length === 0 ? (
             <div className="brands-placeholder">
-              <p>{brands.length === 0 ? 'No brands added yet.' : 'No brands match your search.'}</p>
+              <p>{totalCount === 0 ? 'No brands added yet.' : 'No brands match your search.'}</p>
             </div>
           ) : (
             <div className="brands-grid-shell">
@@ -296,6 +318,18 @@ function App() {
                   </article>
                 ))}
               </div>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="dashboard-pagination" aria-label="Brand pagination">
+              <button type="button" onClick={() => setPage(current => Math.max(1, current - 1))} disabled={page <= 1}>
+                Previous
+              </button>
+              <span>Page {page} of {totalPages}</span>
+              <button type="button" onClick={() => setPage(current => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>
+                Next
+              </button>
             </div>
           )}
         </section>

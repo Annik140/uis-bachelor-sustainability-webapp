@@ -233,6 +233,16 @@
   color: #a33a34;
 }
 
+.admin-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  color: #5f574b;
+  font-size: 14px;
+}
+
 @media (max-width: 980px) {
   .admin-dashboard-header {
     flex-direction: column;
