@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -22,6 +23,18 @@ public class Program
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
         builder.Services.AddProblemDetails();
+        builder.Services.AddAntiforgery(options =>
+        {
+            options.HeaderName = "X-CSRF-TOKEN";
+            options.Cookie.Name = "sustain_csrf";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = builder.Environment.IsDevelopment()
+                ? SameSiteMode.Lax
+                : SameSiteMode.Strict;
+            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                ? CookieSecurePolicy.None
+                : CookieSecurePolicy.Always;
+        });
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
         builder.Services.AddScoped<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
@@ -110,6 +123,29 @@ public class Program
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.Use(async (ctx, next) =>
+        {
+            if (IsAdminStateChangingRequest(ctx.Request) &&
+                !ctx.Request.Path.StartsWithSegments("/admin/login", StringComparison.OrdinalIgnoreCase))
+            {
+                var antiforgery = ctx.RequestServices.GetRequiredService<IAntiforgery>();
+                try
+                {
+                    await antiforgery.ValidateRequestAsync(ctx);
+                }
+                catch (AntiforgeryValidationException)
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    await ctx.Response.WriteAsJsonAsync(new
+                    {
+                        message = "Invalid or missing CSRF token."
+                    });
+                    return;
+                }
+            }
+
+            await next();
+        });
 
         app.MapGet("/brands", async (AppDbContext db) =>
             await db.ClothingBrands
@@ -149,6 +185,15 @@ public class Program
             return brand is null ? Results.NotFound() : Results.Ok(brand);
         })
         .RequireAuthorization("AdminOnly");
+
+        app.MapGet("/admin/csrf-token", (HttpContext ctx, IAntiforgery antiforgery) =>
+        {
+            var tokens = antiforgery.GetAndStoreTokens(ctx);
+            return Results.Ok(new
+            {
+                token = tokens.RequestToken
+            });
+        }).RequireAuthorization("AdminOnly");
 
         // Admin login endpoint, signs in cookie if credentials match env vars
         app.MapPost("/admin/login", async (HttpContext ctx, AppDbContext db, IPasswordHasher<AdminUser> passwordHasher) =>
@@ -326,6 +371,19 @@ public class Program
         static string NormalizeUsername(string username)
         {
             return username.Trim().ToUpperInvariant();
+        }
+
+        static bool IsAdminStateChangingRequest(HttpRequest request)
+        {
+            if (!request.Path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return HttpMethods.IsPost(request.Method) ||
+                   HttpMethods.IsPut(request.Method) ||
+                   HttpMethods.IsDelete(request.Method) ||
+                   HttpMethods.IsPatch(request.Method);
         }
 
         static void EnsureAdminBootstrapAccount(AppDbContext db, IPasswordHasher<AdminUser> passwordHasher, IConfiguration configuration, ILogger logger)

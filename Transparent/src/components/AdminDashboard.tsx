@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './AdminDashboard.css'
+import { clearCsrfToken, withCsrfHeaders } from '../utils/csrf'
 
 type Brand = {
   id: number
@@ -70,18 +71,33 @@ export default function AdminDashboard() {
   }
 
   async function handleDelete(id: number) {
-    const response = await fetch(`/admin/clothingbrands/${id}`, { method: 'DELETE', credentials: 'include' })
+    const headers = await withCsrfHeaders()
+    const response = await fetch(`/admin/clothingbrands/${id}`, { method: 'DELETE', credentials: 'include', headers })
     if (response.status === 401) {
+      clearCsrfToken()
       window.location.href = '/admin/login'
       return
     }
+
+    if (response.status === 400) {
+      setError('Could not delete brand: session security token expired. Please refresh and try again.')
+      return
+    }
+
     fetchBrands()
   }
 
   async function handleLogout() {
-    const response = await fetch('/admin/logout', { method: 'POST', credentials: 'include' })
+    const headers = await withCsrfHeaders()
+    const response = await fetch('/admin/logout', { method: 'POST', credentials: 'include', headers })
     if (response.status === 401 || response.ok) {
+      clearCsrfToken()
       window.location.href = '/admin/login'
+      return
+    }
+
+    if (response.status === 400) {
+      setError('Could not logout: session security token expired. Please refresh and try again.')
     }
   }
 

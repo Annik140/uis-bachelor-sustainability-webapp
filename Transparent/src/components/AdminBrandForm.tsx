@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './AdminBrandForm.css'
+import { clearCsrfToken, withCsrfHeaders } from '../utils/csrf'
 
 type Mode = 'create' | 'edit'
 
@@ -360,21 +361,23 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
     try {
       const payload = form
+      const headers = await withCsrfHeaders({ 'Content-Type': 'application/json' })
       const response = mode === 'create'
         ? await fetch('/admin/clothingbrands', {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(payload)
           })
         : await fetch(`/admin/clothingbrands/${brandId}`, {
             method: 'PUT',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(payload)
           })
 
         if (response.status === 401) {
+          clearCsrfToken()
           window.location.href = '/admin/login'
           return
         }
