@@ -4,19 +4,19 @@ namespace uis_bachelor_sustainability_webapp.Services;
 
 public static class BrandScoreCalculator
 {
-    private const decimal MaterialWeight = 0.25m;
-    private const decimal LaborWeight = 0.30m;
+    private const decimal MaterialWeight = 0.30m;
+    private const decimal LaborWeight = 0.20m;
     private const decimal CarbonWeight = 0.25m;
-    private const decimal LongevityWeight = 0.20m;
+    private const decimal LongevityWeight = 0.25m;
 
     private static readonly IReadOnlyDictionary<string, CriterionDefinition> CriterionDefinitions =
         new Dictionary<string, CriterionDefinition>(StringComparer.OrdinalIgnoreCase)
         {
             // Material
-            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.30m, null),
+            [Key("Material", "Fiber traceability")] = new("Material", "Fiber traceability", 0.25m, null),
             [Key("Material", "Chemical management")] = new("Material", "Chemical management", 0.25m, null),
             [Key("Material", "Recycled content / Preferred material content")] = new("Material", "Recycled content / Preferred material content", 0.25m, "%"),
-            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.20m, null),
+            [Key("Material", "Certifications")] = new("Material", "Certifications", 0.25m, null),
 
             // Labor
             [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.35m, null),
@@ -33,7 +33,7 @@ public static class BrandScoreCalculator
             // Longevity
             [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.40m, null),
             [Key("Longevity", "Repairability & Repair Services")] = new("Longevity", "Repairability & Repair Services", 0.30m, null),
-            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.20m, null)
+            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.30m, null)
         };
 
     public static void ApplyScores(ClothingBrand brand)

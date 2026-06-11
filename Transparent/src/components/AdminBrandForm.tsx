@@ -97,8 +97,8 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
   // Material
   { category: 'Material', name: 'Fiber traceability', inputKind: 'select', options: [
     { label: 'No fiber traceability', value: 0 },
-    { label: 'General supplier disclosure', value: 25 },
-    { label: 'Tier 1 supplier traceability', value: 50 },
+    { label: 'Tier 1 supplier traceability', value: 25 },
+    { label: 'Tier 1-2 supplier traceability', value: 50 },
     { label: 'Tier 1–3 traceability', value: 75 },
     { label: 'Tier 1–4 / farm-level traceability', value: 100 }
   ] },
