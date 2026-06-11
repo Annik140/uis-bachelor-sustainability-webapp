@@ -98,6 +98,13 @@
   flex-direction: column;
 }
 
+.admin-brand-form-logo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .admin-brand-form-logo-file-input {
   display: none;
 }
@@ -117,6 +124,11 @@
   gap: 8px;
   cursor: pointer;
   transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.admin-brand-form-logo-dropzone-has-preview {
+  padding: 0;
+  overflow: hidden;
 }
 
 .admin-brand-form-logo-dropzone:hover {
@@ -153,27 +165,17 @@
   font-size: 15px;
 }
 
-.admin-brand-form-logo-actions {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .admin-brand-form-logo-preview {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  min-height: 190px;
+  height: 100%;
 }
 
 .admin-brand-form-logo-preview img {
-  width: min(100%, 190px);
-  height: 120px;
-  object-fit: contain;
-  border: 1px solid #d8d1c3;
-  background: #f7f4ee;
-  padding: 6px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .admin-brand-form-control {

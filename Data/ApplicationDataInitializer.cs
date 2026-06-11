@@ -6,6 +6,8 @@ namespace uis_bachelor_sustainability_webapp.Data;
 
 public static class ApplicationDataInitializer
 {
+    private const string SeedingModeConfigKey = "Seeding:Mode";
+
     public static void Initialize(WebApplication app)
     {
         using var scope = app.Services.CreateScope();
@@ -25,7 +27,30 @@ public static class ApplicationDataInitializer
 
         if (!app.Environment.IsEnvironment("Testing"))
         {
-            DemoBrandSeeder.Seed(db);
+            ApplyBrandSeeding(db, app.Configuration, app.Logger);
+        }
+    }
+
+    private static void ApplyBrandSeeding(AppDbContext db, IConfiguration configuration, ILogger logger)
+    {
+        var rawMode = configuration[SeedingModeConfigKey];
+        var mode = (rawMode ?? "none").Trim().ToLowerInvariant();
+
+        switch (mode)
+        {
+            case "none":
+                logger.LogInformation("Brand seeding disabled. Set {ConfigKey}=Demo or Real to enable.", SeedingModeConfigKey);
+                return;
+            case "demo":
+                DemoBrandSeeder.Seed(db);
+                logger.LogInformation("Demo brand seeding completed.");
+                return;
+            case "real":
+                RealBrandSeeder.Seed(db, logger);
+                return;
+            default:
+                logger.LogWarning("Unknown seeding mode '{Mode}'. Supported modes: None, Demo, Real. Falling back to None.", rawMode);
+                return;
         }
     }
 

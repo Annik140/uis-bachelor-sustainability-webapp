@@ -99,7 +99,7 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
     { label: 'No fiber traceability', value: 0 },
     { label: 'General supplier disclosure', value: 25 },
     { label: 'Tier 1 supplier traceability', value: 50 },
-    { label: 'Tier 1–2 traceability', value: 75 },
+    { label: 'Tier 1–3 traceability', value: 75 },
     { label: 'Tier 1–4 / farm-level traceability', value: 100 }
   ] },
   { category: 'Material', name: 'Chemical management', inputKind: 'select', options: [
@@ -203,6 +203,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   const [loading, setLoading] = useState(mode === 'edit')
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isLogoDropActive, setIsLogoDropActive] = useState(false)
+  const [isLogoPreviewBroken, setIsLogoPreviewBroken] = useState(false)
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false)
   const [editingSourceIndex, setEditingSourceIndex] = useState<number | null>(null)
   const [sourceTitleInput, setSourceTitleInput] = useState('')
@@ -273,6 +274,10 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   function updateBrand(patch: Partial<Brand>) {
     setForm({ ...form, ...patch })
   }
+
+  useEffect(() => {
+    setIsLogoPreviewBroken(false)
+  }, [form.logoPath])
 
   function isWebLink(value: string) {
     if (!value) return false
@@ -461,17 +466,6 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
         }
 
       if (response.ok) {
-        if (mode === 'create') {
-          const createdBrand = await response.json().catch(() => null)
-          if (!createdBrand?.id) {
-            setError('Brand creation did not return a saved brand. Please try again.')
-            return
-          }
-
-          window.location.href = `/admin/dashboard?created=${createdBrand.id}`
-          return
-        }
-
         window.location.href = '/admin/dashboard'
         return
       }
@@ -490,13 +484,11 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
         details = ''
       }
 
-      if (details) {
-        setError(`Failed to save brand (${response.status}): ${details}`)
-      } else {
-        setError(`Failed to save brand (${response.status})`)
-      }
+      const action = mode === 'create' ? 'Could not create brand' : 'Could not save changes'
+      setError(details ? `${action}: ${details}` : action)
     } catch {
-      setError('Network error: backend may not be running or reachable.')
+      const action = mode === 'create' ? 'Could not create brand' : 'Could not save changes'
+      setError(`${action} — network error. Check that the backend is running and try again.`)
     }
   }
 
@@ -537,7 +529,18 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
             </div>
 
             <div className="admin-brand-form-logo-column">
-              <label>Brand logo (optional)</label>
+              <div className="admin-brand-form-logo-heading">
+                <label>Brand logo (optional)</label>
+                {form.logoPath?.trim() && (
+                  <button
+                    type="button"
+                    className="admin-brand-form-btn admin-brand-form-btn-ghost"
+                    onClick={() => updateBrand({ logoPath: '' })}
+                  >
+                    Remove logo
+                  </button>
+                )}
+              </div>
               <input
                 ref={logoFileInputRef}
                 className="admin-brand-form-logo-file-input"
@@ -554,7 +557,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
               />
 
               <div
-                className={`admin-brand-form-logo-dropzone ${isLogoDropActive ? 'admin-brand-form-logo-dropzone-active' : ''}`}
+                className={`admin-brand-form-logo-dropzone ${isLogoDropActive ? 'admin-brand-form-logo-dropzone-active' : ''} ${form.logoPath?.trim() ? 'admin-brand-form-logo-dropzone-has-preview' : ''}`}
                 onDragOver={event => {
                   event.preventDefault()
                   setIsLogoDropActive(true)
@@ -580,28 +583,23 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                   }
                 }}
               >
-                <div className="admin-brand-form-logo-dropzone-copy" aria-hidden="true">
+                {!form.logoPath?.trim() && <div className="admin-brand-form-logo-dropzone-copy" aria-hidden="true">
                   <span className="admin-brand-form-logo-dropzone-title">Choose file</span>
                   <span className="admin-brand-form-logo-dropzone-or">or</span>
                   <span className="admin-brand-form-logo-dropzone-title">drop/paste image here.</span>
-                </div>
+                </div>}
                 {isUploadingLogo && <p className="admin-brand-form-muted">Uploading logo...</p>}
-                {form.logoPath?.trim() && (
+                {form.logoPath?.trim() && !isLogoPreviewBroken && (
                   <div className="admin-brand-form-logo-preview">
-                    <img src={form.logoPath} alt={`${form.brandName || 'Brand'} logo preview`} />
+                    <img
+                      src={form.logoPath}
+                      alt=""
+                      onError={() => setIsLogoPreviewBroken(true)}
+                    />
                   </div>
                 )}
-              </div>
-
-              <div className="admin-brand-form-logo-actions">
-                {form.logoPath?.trim() && (
-                  <button
-                    type="button"
-                    className="admin-brand-form-btn admin-brand-form-btn-ghost"
-                    onClick={() => updateBrand({ logoPath: '' })}
-                  >
-                    Remove logo
-                  </button>
+                {form.logoPath?.trim() && isLogoPreviewBroken && (
+                  <p className="admin-brand-form-muted">Could not load logo preview. You can still save and verify on the card.</p>
                 )}
               </div>
             </div>

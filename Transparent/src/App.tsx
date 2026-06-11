@@ -170,6 +170,7 @@ function App() {
   const [totalCount, setTotalCount] = useState(0)
   const [isAdminSessionActive, setIsAdminSessionActive] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const [brokenLogoBrandIds, setBrokenLogoBrandIds] = useState<Set<number>>(new Set())
   const pageSize = 12
   const editMatch = path.match(/^\/admin\/brands\/(\d+)\/edit$/)
 
@@ -388,7 +389,10 @@ function App() {
           ) : (
             <div className="brands-grid-shell">
               <div className="brands-grid">
-                {visibleBrands.map(brand => (
+                {visibleBrands.map(brand => {
+                  const hasRenderableLogo = Boolean(brand.logoPath?.trim()) && !brokenLogoBrandIds.has(brand.id)
+
+                  return (
                   <article
                     key={brand.id}
                     className="brand-card"
@@ -403,8 +407,24 @@ function App() {
                     }}
                   >
                     <div className="brand-card-top">
-                      {brand.logoPath?.trim() ? (
-                        <img className="brand-logo" src={brand.logoPath} alt={`${brand.brandName} logo`} loading="lazy" />
+                      {hasRenderableLogo ? (
+                        <img
+                          className="brand-logo"
+                          src={brand.logoPath}
+                          alt=""
+                          loading="lazy"
+                          onError={() => {
+                            setBrokenLogoBrandIds(previous => {
+                              if (previous.has(brand.id)) {
+                                return previous
+                              }
+
+                              const next = new Set(previous)
+                              next.add(brand.id)
+                              return next
+                            })
+                          }}
+                        />
                       ) : (
                         <h3 className="brand-title">{brand.brandName}</h3>
                       )}
@@ -444,7 +464,8 @@ function App() {
                       <p className="view-details">View details {'->'}</p>
                     </div>
                   </article>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

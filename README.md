@@ -21,6 +21,16 @@ CREATE DATABASE sustainability_db_dev;
 
 4. Apply migrations on first run (the backend will auto-create tables).
 
+### Brand Seeding Mode
+
+Brand seeding is configurable and disabled by default.
+
+- `Seeding:Mode = None` - no automatic brand seeding (recommended while entering real brands manually)
+- `Seeding:Mode = Demo` - seeds synthetic demo brands
+- `Seeding:Mode = Real` - reserved for exported real-brand seed data
+
+Set this in `appsettings.Development.json` (local only) or via environment variables.
+
 ### Admin Credentials Setup
 
 This project uses a lightweight cookie-based admin login. Admin credentials are read from the environment and must be configured before starting the backend.
@@ -39,6 +49,13 @@ dotnet user-secrets set "ADMIN_PASSWORD" "your-password"
 
 ```powershell
 dotnet watch run
+```
+
+To run with demo brands temporarily:
+
+```powershell
+$env:Seeding__Mode="Demo"
+dotnet run
 ```
 
 3. Start the frontend (separate terminal, inside `Transparent`):
