@@ -5,7 +5,6 @@ import { clearCsrfToken, withCsrfHeaders } from '../utils/csrf'
 type Brand = {
   id: number
   brandName: string
-  category?: string
   sustainabilityScore?: number
   transparencyScore?: number
   prosSummary?: string
@@ -179,7 +178,7 @@ export default function AdminDashboard() {
           <form className="admin-brand-search" onSubmit={e => e.preventDefault()}>
             <input
               type="text"
-              placeholder="Search by brand or category..."
+              placeholder="Search by brand..."
               value={searchQuery}
               onChange={e => {
                 setSearchQuery(e.target.value)
@@ -202,7 +201,6 @@ export default function AdminDashboard() {
                 <article key={brand.id} className="admin-brand-card">
                   <div className="admin-brand-main">
                     <h3>{brand.brandName}</h3>
-                    <p className="admin-brand-category">{brand.category ?? 'Uncategorized'}</p>
                   </div>
 
                   <div className="admin-brand-scores">

@@ -64,7 +64,6 @@ public class AdminApiIntegrationTests
         {
             brandName = "NoTokenBrand",
             description = "Missing CSRF should fail",
-            category = "Test",
             evidenceSources = Array.Empty<object>(),
             criteriaItems = Array.Empty<object>(),
             certifications = Array.Empty<object>(),
@@ -102,7 +101,6 @@ public class AdminApiIntegrationTests
             {
                 brandName = "TokenBrand",
                 description = "Created through integration test",
-                category = "Test",
                 evidenceSources = Array.Empty<object>(),
                 criteriaItems = Array.Empty<object>(),
                 certifications = Array.Empty<object>(),

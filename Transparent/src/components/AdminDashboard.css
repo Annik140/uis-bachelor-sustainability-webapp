@@ -208,13 +208,6 @@
   color: #23211e;
 }
 
-.admin-brand-category {
-  margin-top: 5px;
-  font-size: 14px;
-  color: #736c61;
-  font-family: 'Georgia', serif;
-}
-
 .admin-brand-scores {
   min-width: 190px;
   display: grid;

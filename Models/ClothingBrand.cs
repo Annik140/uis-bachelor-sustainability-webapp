@@ -6,7 +6,6 @@ public class ClothingBrand
     public required string BrandName { get; set; }
     public string? LogoPath { get; set; }
     public string? Description { get; set; }
-    public string? Category { get; set; }
     public string? ProsSummary { get; set; }
     public string? ConsSummary { get; set; }
     public decimal? MaterialSustainabilityScore { get; set; }

@@ -11,7 +11,6 @@ type Brand = {
   brandName: string
   logoPath?: string
   description?: string
-  category?: string
   prosSummary?: string
   consSummary?: string
   sustainabilityScore?: number
@@ -413,7 +412,7 @@ function App() {
 
                     <div className="brand-card-body">
                       <p className="brand-description-preview">
-                        {brand.description?.trim() || (brand.category ? `${brand.category} profile.` : 'Description coming soon.')}
+                        {brand.description?.trim() || 'Description coming soon.'}
                       </p>
 
                       <div className="scores-row" aria-label="Brand scores">
@@ -473,7 +472,6 @@ function App() {
               <header className="brand-modal-header">
                 <div>
                   <h2>{selectedBrand.brandName}</h2>
-                  <p>{selectedBrand.category ?? 'Brand profile'}</p>
                   {selectedBrand.description?.trim() && <p>{selectedBrand.description}</p>}
                 </div>
                 <button type="button" className="brand-modal-close" onClick={() => setSelectedBrand(null)} aria-label="Close brand details">

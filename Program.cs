@@ -106,25 +106,7 @@ public class Program
         });
 
         var app = builder.Build();
-
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AdminUser>>();
-            if (app.Environment.IsEnvironment("Testing"))
-            {
-                db.Database.EnsureCreated();
-            }
-            else
-            {
-                db.Database.Migrate();
-            }
-            EnsureAdminBootstrapAccount(db, passwordHasher, app.Configuration, app.Logger);
-            if (!app.Environment.IsEnvironment("Testing"))
-            {
-                SeedDemoBrands(db);
-            }
-        }
+        ApplicationDataInitializer.Initialize(app);
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -389,7 +371,6 @@ public class Program
                 BrandName = input.BrandName.Trim(),
                 LogoPath = input.LogoPath?.Trim(),
                 Description = input.Description?.Trim(),
-                Category = input.Category?.Trim(),
                 EvidenceSourceCount = 0,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -423,7 +404,6 @@ public class Program
             existing.BrandName = input.BrandName.Trim();
             existing.LogoPath = input.LogoPath?.Trim();
             existing.Description = input.Description?.Trim();
-            existing.Category = input.Category?.Trim();
             existing.EvidenceSourceCount = 0;
             db.BrandEvidenceSources.RemoveRange(existing.EvidenceSources);
             AddEvidenceSources(existing, input);
@@ -475,9 +455,7 @@ public class Program
             if (!string.IsNullOrWhiteSpace(normalizedQuery))
             {
                 var query = normalizedQuery.ToLower();
-                filtered = filtered.Where(brand =>
-                    brand.BrandName.ToLower().Contains(query) ||
-                    (brand.Category != null && brand.Category.ToLower().Contains(query)));
+                filtered = filtered.Where(brand => brand.BrandName.ToLower().Contains(query));
             }
 
             var totalCount = await filtered.CountAsync();
@@ -576,11 +554,6 @@ public class Program
                 AddError(errors, nameof(input.Description), "Description must be at most 1000 characters.");
             }
 
-            if (!string.IsNullOrWhiteSpace(input.Category) && input.Category.Trim().Length > 120)
-            {
-                AddError(errors, nameof(input.Category), "Category must be at most 120 characters.");
-            }
-
             foreach (var source in input.EvidenceSources ?? [])
             {
                 if (string.IsNullOrWhiteSpace(source.SourceTitle) || source.SourceTitle.Trim().Length > 250)
@@ -631,52 +604,6 @@ public class Program
             }
 
             return errors;
-        }
-
-        static void EnsureAdminBootstrapAccount(AppDbContext db, IPasswordHasher<AdminUser> passwordHasher, IConfiguration configuration, ILogger logger)
-        {
-            var bootstrapUser =
-                configuration["ADMIN_BOOTSTRAP_USER"] ??
-                Environment.GetEnvironmentVariable("ADMIN_BOOTSTRAP_USER") ??
-                configuration["ADMIN_USER"] ??
-                Environment.GetEnvironmentVariable("ADMIN_USER");
-
-            var bootstrapPassword =
-                configuration["ADMIN_BOOTSTRAP_PASSWORD"] ??
-                Environment.GetEnvironmentVariable("ADMIN_BOOTSTRAP_PASSWORD") ??
-                configuration["ADMIN_PASSWORD"] ??
-                Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
-
-            if (string.IsNullOrWhiteSpace(bootstrapUser) || string.IsNullOrWhiteSpace(bootstrapPassword))
-            {
-                if (!db.AdminUsers.Any())
-                {
-                    logger.LogWarning("No admin users exist and no bootstrap credentials were configured.");
-                }
-                return;
-            }
-
-            var normalizedUsername = NormalizeUsername(bootstrapUser);
-            var exists = db.AdminUsers.Any(user => user.NormalizedUsername == normalizedUsername);
-            if (exists)
-            {
-                return;
-            }
-
-            var adminUser = new AdminUser
-            {
-                Username = bootstrapUser.Trim(),
-                NormalizedUsername = normalizedUsername,
-                PasswordHash = string.Empty,
-                IsActive = true,
-                CreatedAtUtc = DateTime.UtcNow,
-                UpdatedAtUtc = DateTime.UtcNow,
-            };
-
-            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, bootstrapPassword);
-            db.AdminUsers.Add(adminUser);
-            db.SaveChanges();
-            logger.LogInformation("Bootstrap admin user {User} was created.", adminUser.Username);
         }
 
         static void AddEvidenceSources(ClothingBrand target, BrandUpsertDto input)
@@ -747,205 +674,6 @@ public class Program
                     CreatedAtUtc = DateTime.UtcNow
                 });
             }
-        }
-
-        static void SeedDemoBrands(AppDbContext db)
-        {
-            var allCriteria = GetDefaultCriteriaTemplate();
-
-            var seededBrands = new List<ClothingBrand>
-            {
-                BuildBrand(
-                    brandName: "Pinnacle Proof",
-                    description: "Synthetic test profile. Not a real brand. Represents maximum sustainability score with full disclosed evidence.",
-                    category: "Test benchmark",
-                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
-                    {
-                        ["Material:Fiber traceability"] = 100,
-                        ["Material:Chemical management"] = 100,
-                        ["Material:Recycled content / Preferred material content"] = 100,
-                        ["Material:Certifications"] = 100,
-                        ["Labor:Living wage commitment & coverage"] = 100,
-                        ["Labor:Worker safety & working hours"] = 100,
-                        ["Labor:Freedom of association / grievance mechanisms"] = 100,
-                        ["Labor:Supplier audit transparency"] = 100,
-                        ["Carbon:Reduction targets & progress"] = 100,
-                        ["Carbon:Renewable energy"] = 100,
-                        ["Carbon:Transport & logistics"] = 100,
-                        ["Carbon:Scope 1-3 measurement"] = 100,
-                        ["Longevity:Durability Testing / Expected Lifetime"] = 100,
-                        ["Longevity:Repairability & Repair Services"] = 100,
-                        ["Longevity:Circularity Programs"] = 100,
-                        ["Longevity:Care Instructions & User Guidance"] = 100,
-                    }),
-                    certifications: ["GOTS", "SBTi", "B Corp"],
-                    sourceTitle: "Pinnacle methodology sheet"
-                ),
-                BuildBrand(
-                    brandName: "Nadir Null",
-                    description: "Synthetic test profile. Not a real brand. Represents minimum sustainability score while still fully disclosed for stress testing.",
-                    category: "Test benchmark",
-                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>
-                    {
-                        ["Material:Fiber traceability"] = 0,
-                        ["Material:Chemical management"] = 0,
-                        ["Material:Recycled content / Preferred material content"] = 0,
-                        ["Material:Certifications"] = 0,
-                        ["Labor:Living wage commitment & coverage"] = 0,
-                        ["Labor:Worker safety & working hours"] = 0,
-                        ["Labor:Freedom of association / grievance mechanisms"] = 0,
-                        ["Labor:Supplier audit transparency"] = 0,
-                        ["Carbon:Reduction targets & progress"] = 0,
-                        ["Carbon:Renewable energy"] = 0,
-                        ["Carbon:Transport & logistics"] = 0,
-                        ["Carbon:Scope 1-3 measurement"] = 0,
-                        ["Longevity:Durability Testing / Expected Lifetime"] = 0,
-                        ["Longevity:Repairability & Repair Services"] = 0,
-                        ["Longevity:Circularity Programs"] = 0,
-                        ["Longevity:Care Instructions & User Guidance"] = 0,
-                    }),
-                    certifications: [],
-                    sourceTitle: "Nadir disclosure sheet"
-                ),
-                BuildBrand(
-                    brandName: "No Info Void",
-                    description: "Synthetic test profile. Not a real brand. All criteria are left as Information not found to test extreme missing-data cards.",
-                    category: "Test benchmark",
-                    criteria: FillCriteria(allCriteria, new Dictionary<string, decimal>()),
-                    certifications: [],
-                    sourceTitle: "No Info test stub"
-                ),
-            };
-
-            var syntheticSeedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "Pinnacle Proof",
-                "Nadir Null",
-                "No Info Void",
-            };
-
-            var keepNames = seededBrands
-                .Select(b => b.BrandName)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var removableSynthetic = db.ClothingBrands
-                .Include(b => b.CriteriaItems)
-                .Include(b => b.EvidenceSources)
-                .Include(b => b.Certifications)
-                .Where(b => syntheticSeedNames.Contains(b.BrandName) && !keepNames.Contains(b.BrandName))
-                .ToList();
-
-            if (removableSynthetic.Count > 0)
-            {
-                db.ClothingBrands.RemoveRange(removableSynthetic);
-                db.SaveChanges();
-            }
-
-            var existingNames = db.ClothingBrands
-                .Select(b => b.BrandName)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            var missingBrands = seededBrands
-                .Where(brand => !existingNames.Contains(brand.BrandName))
-                .ToList();
-
-            if (missingBrands.Count == 0)
-            {
-                return;
-            }
-
-            db.ClothingBrands.AddRange(missingBrands);
-            db.SaveChanges();
-        }
-
-        static ClothingBrand BuildBrand(
-            string brandName,
-            string description,
-            string category,
-            List<BrandCriterionItem> criteria,
-            IReadOnlyList<string> certifications,
-            string sourceTitle,
-            string? logoPath = null)
-        {
-            var brand = new ClothingBrand
-            {
-                BrandName = brandName,
-                LogoPath = logoPath,
-                Description = description,
-                Category = category,
-                CreatedAtUtc = DateTime.UtcNow,
-                UpdatedAtUtc = DateTime.UtcNow,
-            };
-
-            foreach (var criterion in criteria)
-            {
-                brand.CriteriaItems.Add(criterion);
-            }
-
-            brand.EvidenceSources.Add(new BrandEvidenceSource
-            {
-                SourceTitle = sourceTitle,
-                SourceUrl = "https://example.com/report",
-                SourceType = "Report",
-                CreatedAtUtc = DateTime.UtcNow,
-            });
-
-            foreach (var certification in certifications.Distinct(StringComparer.OrdinalIgnoreCase))
-            {
-                brand.Certifications.Add(new BrandCertification
-                {
-                    Name = certification,
-                    CreatedAtUtc = DateTime.UtcNow,
-                });
-            }
-
-            brand.EvidenceSourceCount = brand.EvidenceSources.Count;
-            BrandScoreCalculator.NormalizeCriteria(brand);
-            BrandScoreCalculator.ApplyScores(brand);
-            return brand;
-        }
-
-        static List<BrandCriterionItem> GetDefaultCriteriaTemplate()
-        {
-            return
-            [
-                new() { Category = "Material", Name = "Fiber traceability", Unit = "%", Weight = 1m },
-                new() { Category = "Material", Name = "Chemical management", Weight = 1m },
-                new() { Category = "Material", Name = "Recycled content / Preferred material content", Unit = "%", Weight = 1m },
-                new() { Category = "Material", Name = "Certifications", Weight = 1m },
-                new() { Category = "Labor", Name = "Living wage commitment & coverage", Weight = 1m },
-                new() { Category = "Labor", Name = "Worker safety & working hours", Weight = 1m },
-                new() { Category = "Labor", Name = "Freedom of association / grievance mechanisms", Weight = 1m },
-                new() { Category = "Labor", Name = "Supplier audit transparency", Weight = 1m },
-                new() { Category = "Carbon", Name = "Reduction targets & progress", Weight = 1m },
-                new() { Category = "Carbon", Name = "Renewable energy", Unit = "%", Weight = 1m },
-                new() { Category = "Carbon", Name = "Transport & logistics", Weight = 1m },
-                new() { Category = "Carbon", Name = "Scope 1-3 measurement", Weight = 1m },
-                new() { Category = "Longevity", Name = "Durability Testing / Expected Lifetime", Weight = 1m },
-                new() { Category = "Longevity", Name = "Repairability & Repair Services", Weight = 1m },
-                new() { Category = "Longevity", Name = "Circularity Programs", Weight = 1m },
-                new() { Category = "Longevity", Name = "Care Instructions & User Guidance", Weight = 1m },
-            ];
-        }
-
-        static List<BrandCriterionItem> FillCriteria(List<BrandCriterionItem> template, IReadOnlyDictionary<string, decimal> overrides)
-        {
-            return template.Select(item =>
-            {
-                var key = $"{item.Category}:{item.Name}";
-                overrides.TryGetValue(key, out var value);
-
-                return new BrandCriterionItem
-                {
-                    Category = item.Category,
-                    Name = item.Name,
-                    NumericValue = overrides.ContainsKey(key) ? value : null,
-                    Unit = item.Unit,
-                    Weight = item.Weight,
-                    Notes = null,
-                    CreatedAtUtc = DateTime.UtcNow,
-                };
-            }).ToList();
         }
     }
 }

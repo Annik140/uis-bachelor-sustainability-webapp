@@ -28,7 +28,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.BrandName).HasMaxLength(200).IsRequired();
             entity.Property(e => e.LogoPath).HasMaxLength(300);
             entity.Property(e => e.Description).HasMaxLength(1000);
-            entity.Property(e => e.Category).HasMaxLength(120);
             entity.Property(e => e.ProsSummary).HasMaxLength(1000);
             entity.Property(e => e.ConsSummary).HasMaxLength(1000);
             entity.Property(e => e.MaterialSustainabilityScore).HasPrecision(4, 1);
