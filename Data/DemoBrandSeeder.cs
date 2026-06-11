@@ -114,7 +114,6 @@ public static class DemoBrandSeeder
                     ["Carbon:Transport & logistics"] = 25,
                     ["Longevity:Durability Testing / Expected Lifetime"] = 75,
                     ["Longevity:Circularity Programs"] = 50,
-                    ["Longevity:Care Instructions & User Guidance"] = 50,
                 }),
                 certifications: ["GOTS", "FSC"],
                 sourceTitle: "Materials First transparency brief"
@@ -191,7 +190,7 @@ public static class DemoBrandSeeder
                     ["Carbon:Reduction targets & progress"] = 0,
                     ["Carbon:Transport & logistics"] = 25,
                     ["Longevity:Durability Testing / Expected Lifetime"] = 25,
-                    ["Longevity:Repairability & Repair Services"] = 0,
+                    ["Longevity:Repairability & Repair Services"] = 25,
                 }),
                 certifications: [],
                 sourceTitle: "Opaque Fastwear limited disclosure note"
@@ -269,7 +268,6 @@ public static class DemoBrandSeeder
             new() { Category = "Longevity", Name = "Durability Testing / Expected Lifetime", Weight = 1m },
             new() { Category = "Longevity", Name = "Repairability & Repair Services", Weight = 1m },
             new() { Category = "Longevity", Name = "Circularity Programs", Weight = 1m },
-            new() { Category = "Longevity", Name = "Care Instructions & User Guidance", Weight = 1m },
         ];
     }
 

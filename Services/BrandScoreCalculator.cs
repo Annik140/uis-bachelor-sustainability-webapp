@@ -33,13 +33,14 @@ public static class BrandScoreCalculator
             // Longevity
             [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.40m, null),
             [Key("Longevity", "Repairability & Repair Services")] = new("Longevity", "Repairability & Repair Services", 0.30m, null),
-            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.20m, null),
-            [Key("Longevity", "Care Instructions & User Guidance")] = new("Longevity", "Care Instructions & User Guidance", 0.10m, null)
+            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.20m, null)
         };
 
     public static void ApplyScores(ClothingBrand brand)
     {
-        var criteriaItems = brand.CriteriaItems?.ToList() ?? new List<BrandCriterionItem>();
+        var criteriaItems = (brand.CriteriaItems ?? [])
+            .Where(item => !IsRetiredCriterion(item))
+            .ToList();
         var pros = new List<string>();
         var cons = new List<string>();
 
@@ -217,11 +218,35 @@ public static class BrandScoreCalculator
             "Transport & logistics" => BuildFiveOptionDisplay("transport and logistics", value),
             "Scope 1-3 measurement" => BuildFiveOptionDisplay("emissions measurement", value),
             "Durability Testing / Expected Lifetime" => BuildFiveOptionDisplay("durability", value),
-            "Repairability & Repair Services" => BuildFiveOptionDisplay("repairability", value),
+            "Repairability & Repair Services" => BuildRepairabilityDisplay(value),
             "Circularity Programs" => BuildFiveOptionDisplay("circularity programs", value),
-            "Care Instructions & User Guidance" => BuildGuidanceDisplay(value),
             _ => BuildFiveOptionDisplay(item.Name.ToLowerInvariant(), value)
         };
+    }
+
+    private static CriterionDisplayInfo BuildRepairabilityDisplay(decimal value)
+    {
+        if (value <= 0m)
+        {
+            return new CriterionDisplayInfo("no repair support", CriterionDisplayTier.Concern);
+        }
+
+        if (value <= 25m)
+        {
+            return new CriterionDisplayInfo("no repair support", CriterionDisplayTier.WeakConcern);
+        }
+
+        if (value <= 50m)
+        {
+            return new CriterionDisplayInfo("repair information available", CriterionDisplayTier.WeakStrength);
+        }
+
+        if (value <= 75m)
+        {
+            return new CriterionDisplayInfo("repair services or repair program offered", CriterionDisplayTier.Strength);
+        }
+
+        return new CriterionDisplayInfo("repair services with measurable usage/results", CriterionDisplayTier.StrongStrength);
     }
 
     private static CriterionDisplayInfo BuildFiveOptionDisplay(string noun, decimal value)
@@ -274,19 +299,10 @@ public static class BrandScoreCalculator
         return new CriterionDisplayInfo("broad certification coverage", CriterionDisplayTier.StrongStrength);
     }
 
-    private static CriterionDisplayInfo BuildGuidanceDisplay(decimal value)
+    private static bool IsRetiredCriterion(BrandCriterionItem item)
     {
-        if (value <= 0m)
-        {
-            return new CriterionDisplayInfo("no care guidance", CriterionDisplayTier.Concern);
-        }
-
-        if (value <= 50m)
-        {
-            return new CriterionDisplayInfo("standard care instructions", CriterionDisplayTier.Strength);
-        }
-
-        return new CriterionDisplayInfo("extended care guidance", CriterionDisplayTier.StrongStrength);
+        return string.Equals(item.Category, "Longevity", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(item.Name, "Care Instructions & User Guidance", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizeCategory(string category)

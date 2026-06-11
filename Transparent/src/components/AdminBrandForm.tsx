@@ -177,11 +177,10 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
     { label: 'Standardized testing + results reported', value: 100 }
   ] },
   { category: 'Longevity', name: 'Repairability & Repair Services', inputKind: 'select', options: [
-    { label: 'No repair support', value: 0 },
-    { label: 'Basic repair information', value: 25 },
-    { label: 'Repair guidance available', value: 50 },
-    { label: 'Repair services offered', value: 75 },
-    { label: 'Comprehensive repair ecosystem', value: 100 }
+    { label: 'No repair support', value: 25 },
+    { label: 'Repair information available', value: 50 },
+    { label: 'Repair services OR repair program offered', value: 75 },
+    { label: 'Repair services with measurable usage/results', value: 100 }
   ] },
   { category: 'Longevity', name: 'Circularity Programs', inputKind: 'select', options: [
     { label: 'No programs', value: 0 },
@@ -189,11 +188,6 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
     { label: 'One active program', value: 50 },
     { label: 'Multiple active programs', value: 75 },
     { label: 'Multiple programs + measurable results', value: 100 }
-  ] },
-  { category: 'Longevity', name: 'Care Instructions & User Guidance', inputKind: 'select', options: [
-    { label: 'No guidance', value: 0 },
-    { label: 'Standard care instructions', value: 50 },
-    { label: 'Extended longevity guidance', value: 100 }
   ] }
 ]
 
