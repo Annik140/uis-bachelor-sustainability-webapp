@@ -464,8 +464,15 @@ public class Program
         {
             return (sort ?? "lastUpdatedDesc").ToLowerInvariant() switch
             {
-                "sustainabilitydesc" => query.OrderByDescending(brand => brand.SustainabilityScore).ThenBy(brand => brand.BrandName),
-                "transparencydesc" => query.OrderByDescending(brand => brand.TransparencyScore).ThenBy(brand => brand.BrandName),
+                "sustainabilitydesc" => query
+                    .OrderBy(brand => brand.SustainabilityScore == null)
+                    .ThenByDescending(brand => brand.SustainabilityScore)
+                    .ThenBy(brand => brand.BrandName),
+                "transparencydesc" => query
+                    .OrderByDescending(brand => brand.TransparencyScore)
+                    .ThenBy(brand => brand.SustainabilityScore == null)
+                    .ThenByDescending(brand => brand.SustainabilityScore)
+                    .ThenBy(brand => brand.BrandName),
                 "alphabeticalasc" => query.OrderBy(brand => brand.BrandName),
                 _ => query.OrderByDescending(brand => brand.UpdatedAtUtc).ThenBy(brand => brand.BrandName),
             };
