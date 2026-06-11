@@ -122,6 +122,43 @@ function shouldShowPercentUnit(item: CriterionItem) {
   return item.name === 'Recycled content / Preferred material content' || item.name === 'Renewable energy'
 }
 
+type SummaryItemType = 'pro' | 'con'
+type SummaryItemTier = 'strong' | 'moderate' | 'weak' | 'concern' | 'weak-concern' | 'neutral'
+
+function getSummaryTier(item: string, type: SummaryItemType): SummaryItemTier {
+  const normalized = item.trim().toLowerCase()
+
+  if (normalized === 'no strengths recorded yet.' || normalized === 'no concerns recorded yet.') {
+    return 'neutral'
+  }
+
+  if (type === 'pro') {
+    if (normalized.startsWith('high ') || normalized.startsWith('broad ') || normalized.startsWith('extended ')) {
+      return 'strong'
+    }
+
+    if (normalized.startsWith('good ') || normalized.startsWith('multiple ') || normalized.startsWith('standard ')) {
+      return 'moderate'
+    }
+
+    if (normalized.startsWith('some ') || normalized.startsWith('one ')) {
+      return 'weak'
+    }
+
+    return 'moderate'
+  }
+
+  if (normalized.startsWith('limited ')) {
+    return 'weak-concern'
+  }
+
+  return 'concern'
+}
+
+function getSummaryItemClass(type: SummaryItemType, tier: SummaryItemTier) {
+  return `summary-list-item summary-list-item-${type} summary-list-item-${tier}`
+}
+
 function App() {
   const path = window.location.pathname
   const [brands, setBrands] = useState<Brand[]>([])
@@ -494,25 +531,39 @@ function App() {
                   <section className="modal-section two-col">
                     <div>
                       <h3>Strengths</h3>
-                      <ul>
+                      <ul className="summary-list summary-list-pros">
                         {(selectedBrand.prosSummary ?? 'No strengths recorded yet.')
                           .split('\n')
                           .filter(Boolean)
-                          .map((item, index) => (
-                            <li key={`pro-${index}`}>{item}</li>
-                          ))}
+                          .map((item, index) => {
+                            const tier = getSummaryTier(item, 'pro')
+
+                            return (
+                            <li key={`pro-${index}`} className={getSummaryItemClass('pro', tier)}>
+                              {tier !== 'neutral' && <span className="summary-list-symbol" aria-hidden="true">+</span>}
+                              <span>{item}</span>
+                            </li>
+                            )
+                          })}
                       </ul>
                     </div>
 
                     <div>
                       <h3>Concerns</h3>
-                      <ul>
+                      <ul className="summary-list summary-list-cons">
                         {(selectedBrand.consSummary ?? 'No concerns recorded yet.')
                           .split('\n')
                           .filter(Boolean)
-                          .map((item, index) => (
-                            <li key={`con-${index}`}>{item}</li>
-                          ))}
+                          .map((item, index) => {
+                            const tier = getSummaryTier(item, 'con')
+
+                            return (
+                            <li key={`con-${index}`} className={getSummaryItemClass('con', tier)}>
+                              {tier !== 'neutral' && <span className="summary-list-symbol" aria-hidden="true">-</span>}
+                              <span>{item}</span>
+                            </li>
+                            )
+                          })}
                       </ul>
                     </div>
                   </section>

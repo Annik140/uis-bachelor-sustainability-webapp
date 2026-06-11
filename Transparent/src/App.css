@@ -461,6 +461,54 @@ body {
   line-height: 1.4;
 }
 
+.summary-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.summary-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.summary-list-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex: 0 0 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1px;
+  color: inherit;
+}
+
+.summary-list .summary-list-item.summary-list-item-strong {
+  color: #2f7f55;
+}
+
+.summary-list .summary-list-item.summary-list-item-moderate {
+  color: #4f9b6e;
+}
+
+.summary-list .summary-list-item.summary-list-item-weak {
+  color: #7eb68b;
+}
+
+.summary-list .summary-list-item.summary-list-item-concern {
+  color: #b85b5b;
+}
+
+.summary-list .summary-list-item.summary-list-item-weak-concern {
+  color: #bf8746;
+}
+
+.summary-list .summary-list-item.summary-list-item-neutral {
+  color: #34312c;
+}
+
 .criteria-groups {
   display: grid;
   gap: 14px;

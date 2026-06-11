@@ -177,6 +177,10 @@ public class Program
                 .Include(b => b.CriteriaItems)
                 .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
+            if (brand is not null)
+            {
+                RefreshBrandScores(brand);
+            }
             return brand is null ? Results.NotFound() : Results.Ok(brand);
         })
         .WithName("GetBrandById");
@@ -192,6 +196,10 @@ public class Program
                 .Include(b => b.CriteriaItems)
                 .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
+            if (brand is not null)
+            {
+                RefreshBrandScores(brand);
+            }
             return brand is null ? Results.NotFound() : Results.Ok(brand);
         })
         .RequireAuthorization("AdminOnly");
@@ -437,6 +445,11 @@ public class Program
                 .Take(safePageSize)
                 .ToListAsync();
 
+            foreach (var brand in items)
+            {
+                RefreshBrandScores(brand);
+            }
+
             return new PagedResult<ClothingBrand>
             {
                 Items = items,
@@ -456,6 +469,12 @@ public class Program
                 "alphabeticalasc" => query.OrderBy(brand => brand.BrandName),
                 _ => query.OrderByDescending(brand => brand.UpdatedAtUtc).ThenBy(brand => brand.BrandName),
             };
+        }
+
+        static void RefreshBrandScores(ClothingBrand brand)
+        {
+            BrandScoreCalculator.NormalizeCriteria(brand);
+            BrandScoreCalculator.ApplyScores(brand);
         }
 
         static Dictionary<string, string[]> ValidateBrandInput(BrandUpsertDto input)

@@ -154,14 +154,19 @@ public static class BrandScoreCalculator
             weightedTotal += itemScore.Value * item.Weight;
             weightSum += item.Weight;
 
-            var reason = BuildReason(item);
-            if (itemScore >= 75m)
+            var displayInfo = BuildDisplayInfo(item);
+            if (displayInfo is null)
             {
-                pros.Add($"{item.Name}: {reason}");
+                continue;
             }
-            else if (itemScore <= 40m)
+
+            if (displayInfo.Value.Tier is CriterionDisplayTier.Strength or CriterionDisplayTier.StrongStrength)
             {
-                cons.Add($"{item.Name}: {reason}");
+                pros.Add(displayInfo.Value.Text);
+            }
+            else if (displayInfo.Value.Tier is CriterionDisplayTier.Concern or CriterionDisplayTier.WeakConcern)
+            {
+                cons.Add(displayInfo.Value.Text);
             }
         }
 
@@ -170,7 +175,12 @@ public static class BrandScoreCalculator
             return new CategoryScoreResult(null, 0m);
         }
 
-        return new CategoryScoreResult(RoundToOneDecimal(weightedTotal / weightSum), weightSum);
+        var categoryAverage = weightedTotal / weightSum;
+        var categoryCoverageRatio = CountScoreableCriteria(categoryItems) / (decimal)Math.Max(categoryItems.Count, 1);
+        var coveragePenaltyMultiplier = 0.6m + (0.4m * categoryCoverageRatio);
+        var coverageAdjustedCategoryScore = categoryAverage * coveragePenaltyMultiplier;
+
+        return new CategoryScoreResult(RoundToOneDecimal(Clamp(coverageAdjustedCategoryScore, 0m, 100m)), weightSum);
     }
 
     private static decimal? ScoreCriterion(BrandCriterionItem item)
@@ -183,15 +193,100 @@ public static class BrandScoreCalculator
         return Clamp(item.NumericValue.Value, 0m, 100m);
     }
 
-    private static string BuildReason(BrandCriterionItem item)
+    private static CriterionDisplayInfo? BuildDisplayInfo(BrandCriterionItem item)
     {
         if (!item.NumericValue.HasValue)
         {
-            return "no numeric data was provided";
+            return null;
         }
 
-        var unit = string.IsNullOrWhiteSpace(item.Unit) ? string.Empty : $" {item.Unit}";
-        return $"scored {item.NumericValue.Value:0.#}/100{unit}.";
+        var value = Clamp(item.NumericValue.Value, 0m, 100m);
+
+        return item.Name switch
+        {
+            "Fiber traceability" => BuildFiveOptionDisplay("traceability", value),
+            "Chemical management" => BuildFiveOptionDisplay("chemical management", value),
+            "Recycled content / Preferred material content" => BuildPercentDisplay("recycled content", value),
+            "Certifications" => BuildCertificationDisplay(value),
+            "Living wage commitment & coverage" => BuildFiveOptionDisplay("living wage coverage", value),
+            "Worker safety & working hours" => BuildFiveOptionDisplay("worker safety", value),
+            "Freedom of association / grievance mechanisms" => BuildFiveOptionDisplay("worker voice", value),
+            "Supplier audit transparency" => BuildFiveOptionDisplay("audit transparency", value),
+            "Reduction targets & progress" => BuildFiveOptionDisplay("reduction targets", value),
+            "Renewable energy" => BuildPercentDisplay("renewable energy", value),
+            "Transport & logistics" => BuildFiveOptionDisplay("transport and logistics", value),
+            "Scope 1-3 measurement" => BuildFiveOptionDisplay("emissions measurement", value),
+            "Durability Testing / Expected Lifetime" => BuildFiveOptionDisplay("durability", value),
+            "Repairability & Repair Services" => BuildFiveOptionDisplay("repairability", value),
+            "Circularity Programs" => BuildFiveOptionDisplay("circularity programs", value),
+            "Care Instructions & User Guidance" => BuildGuidanceDisplay(value),
+            _ => BuildFiveOptionDisplay(item.Name.ToLowerInvariant(), value)
+        };
+    }
+
+    private static CriterionDisplayInfo BuildFiveOptionDisplay(string noun, decimal value)
+    {
+        if (value <= 0m)
+        {
+            return new CriterionDisplayInfo($"no {noun}", CriterionDisplayTier.Concern);
+        }
+
+        if (value <= 25m)
+        {
+            return new CriterionDisplayInfo($"limited {noun}", CriterionDisplayTier.WeakConcern);
+        }
+
+        if (value <= 50m)
+        {
+            return new CriterionDisplayInfo($"some {noun}", CriterionDisplayTier.WeakStrength);
+        }
+
+        if (value <= 75m)
+        {
+            return new CriterionDisplayInfo($"good {noun}", CriterionDisplayTier.Strength);
+        }
+
+        return new CriterionDisplayInfo($"high {noun}", CriterionDisplayTier.StrongStrength);
+    }
+
+    private static CriterionDisplayInfo BuildPercentDisplay(string noun, decimal value)
+    {
+        return BuildFiveOptionDisplay(noun, value);
+    }
+
+    private static CriterionDisplayInfo BuildCertificationDisplay(decimal value)
+    {
+        if (value <= 0m)
+        {
+            return new CriterionDisplayInfo("no certifications", CriterionDisplayTier.Concern);
+        }
+
+        if (value <= 35m)
+        {
+            return new CriterionDisplayInfo("one relevant certification", CriterionDisplayTier.WeakStrength);
+        }
+
+        if (value <= 70m)
+        {
+            return new CriterionDisplayInfo("multiple relevant certifications", CriterionDisplayTier.Strength);
+        }
+
+        return new CriterionDisplayInfo("broad certification coverage", CriterionDisplayTier.StrongStrength);
+    }
+
+    private static CriterionDisplayInfo BuildGuidanceDisplay(decimal value)
+    {
+        if (value <= 0m)
+        {
+            return new CriterionDisplayInfo("no care guidance", CriterionDisplayTier.Concern);
+        }
+
+        if (value <= 50m)
+        {
+            return new CriterionDisplayInfo("standard care instructions", CriterionDisplayTier.Strength);
+        }
+
+        return new CriterionDisplayInfo("extended care guidance", CriterionDisplayTier.StrongStrength);
     }
 
     private static string NormalizeCategory(string category)
@@ -234,6 +329,17 @@ public static class BrandScoreCalculator
     private static decimal RoundToOneDecimal(decimal value)
     {
         return Math.Round(value, 1, MidpointRounding.AwayFromZero);
+    }
+
+    private readonly record struct CriterionDisplayInfo(string Text, CriterionDisplayTier Tier);
+
+    private enum CriterionDisplayTier
+    {
+        Concern,
+        WeakConcern,
+        WeakStrength,
+        Strength,
+        StrongStrength
     }
 
     private readonly record struct CategoryScoreResult(decimal? Score, decimal WeightSum);
