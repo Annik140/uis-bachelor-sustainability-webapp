@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './AdminBrandForm.css'
 import { clearCsrfToken, withCsrfHeaders } from '../utils/csrf'
 
@@ -43,6 +43,7 @@ type CriterionDefinition = {
 type Brand = {
   id?: number
   brandName: string
+  logoPath?: string
   description?: string
   evidenceSourceCount?: number
   evidenceSources?: EvidenceSource[]
@@ -77,6 +78,7 @@ const categoryValues = ['Material', 'Labor', 'Carbon', 'Longevity'] as const
 
 const createEmptyBrand = (): Brand => ({
   brandName: '',
+  logoPath: '',
   description: '',
   evidenceSourceCount: 0,
   evidenceSources: [],
@@ -199,10 +201,13 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   const [form, setForm] = useState<Brand>(createEmptyBrand())
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(mode === 'edit')
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [isLogoDropActive, setIsLogoDropActive] = useState(false)
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false)
   const [editingSourceIndex, setEditingSourceIndex] = useState<number | null>(null)
   const [sourceTitleInput, setSourceTitleInput] = useState('')
   const [sourceUrlInput, setSourceUrlInput] = useState('')
+  const logoFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const title = mode === 'create' ? 'Add new brand' : 'Edit brand'
   const subtitle = mode === 'create'
@@ -359,6 +364,75 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     updateBrand({ criteriaItems })
   }
 
+  async function uploadLogo(file: File) {
+    setError(null)
+    setIsUploadingLogo(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const headers = await withCsrfHeaders()
+      const response = await fetch('/admin/upload-logo', {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: formData
+      })
+
+      if (response.status === 401) {
+        clearCsrfToken()
+        window.location.href = '/admin/login'
+        return
+      }
+
+      const data = await response.json().catch(() => null) as { logoPath?: string; message?: string } | null
+      if (!response.ok || !data?.logoPath) {
+        setError(data?.message ?? 'Failed to upload logo.')
+        return
+      }
+
+      updateBrand({ logoPath: data.logoPath })
+    } catch {
+      setError('Failed to upload logo. Please try again.')
+    } finally {
+      setIsUploadingLogo(false)
+    }
+  }
+
+  function handleLogoDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    setIsLogoDropActive(false)
+    const file = event.dataTransfer.files?.[0]
+    if (!file) {
+      return
+    }
+
+    const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+    if (!['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+      setError('Unsupported image format. Use PNG, JPG, JPEG, or WEBP.')
+      return
+    }
+
+    void uploadLogo(file)
+  }
+
+  function handleLogoPaste(event: React.ClipboardEvent<HTMLDivElement>) {
+    const pastedFile = Array.from(event.clipboardData.items)
+      .find(item => ['image/png', 'image/jpeg', 'image/webp'].includes(item.type.toLowerCase()))
+      ?.getAsFile()
+
+    if (!pastedFile) {
+      return
+    }
+
+    event.preventDefault()
+    void uploadLogo(pastedFile)
+  }
+
+  function openLogoFilePicker() {
+    logoFileInputRef.current?.click()
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -443,19 +517,94 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
       <form onSubmit={handleSubmit} className="admin-brand-form-shell">
         <section className="admin-brand-form-section">
           <h3>Brand details</h3>
-          <div className="admin-brand-form-field">
-            <label>Brand name</label>
-            <input className="admin-brand-form-control" required value={form.brandName} onChange={e => updateBrand({ brandName: e.target.value })} />
-          </div>
-          <div className="admin-brand-form-field admin-brand-form-field-spaced">
-            <label>Description</label>
-            <textarea
-              className="admin-brand-form-control"
-              value={form.description ?? ''}
-              onChange={e => updateBrand({ description: e.target.value })}
-              rows={3}
-              placeholder="Optional description shown on the public brand card and brand page."
-            />
+          <div className="admin-brand-form-brand-details-grid">
+            <div className="admin-brand-form-brand-copy-column">
+              <div className="admin-brand-form-field">
+                <label>Brand name</label>
+                <input className="admin-brand-form-control" required value={form.brandName} onChange={e => updateBrand({ brandName: e.target.value })} />
+              </div>
+
+              <div className="admin-brand-form-field admin-brand-form-field-spaced admin-brand-form-description-field">
+                <label>Description</label>
+                <textarea
+                  className="admin-brand-form-control admin-brand-form-description-control"
+                  value={form.description ?? ''}
+                  onChange={e => updateBrand({ description: e.target.value })}
+                  rows={3}
+                  placeholder="Optional description shown on the public brand card and brand page."
+                />
+              </div>
+            </div>
+
+            <div className="admin-brand-form-logo-column">
+              <label>Brand logo (optional)</label>
+              <input
+                ref={logoFileInputRef}
+                className="admin-brand-form-logo-file-input"
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                disabled={isUploadingLogo}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  e.currentTarget.value = ''
+                  if (file) {
+                    void uploadLogo(file)
+                  }
+                }}
+              />
+
+              <div
+                className={`admin-brand-form-logo-dropzone ${isLogoDropActive ? 'admin-brand-form-logo-dropzone-active' : ''}`}
+                onDragOver={event => {
+                  event.preventDefault()
+                  setIsLogoDropActive(true)
+                }}
+                onDragEnter={event => {
+                  event.preventDefault()
+                  setIsLogoDropActive(true)
+                }}
+                onDragLeave={event => {
+                  event.preventDefault()
+                  setIsLogoDropActive(false)
+                }}
+                onDrop={handleLogoDrop}
+                onPaste={handleLogoPaste}
+                tabIndex={0}
+                role="button"
+                aria-label="Drop, paste, or choose a brand logo"
+                onClick={openLogoFilePicker}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openLogoFilePicker()
+                  }
+                }}
+              >
+                <div className="admin-brand-form-logo-dropzone-copy" aria-hidden="true">
+                  <span className="admin-brand-form-logo-dropzone-title">Choose file</span>
+                  <span className="admin-brand-form-logo-dropzone-or">or</span>
+                  <span className="admin-brand-form-logo-dropzone-title">drop/paste image here.</span>
+                </div>
+                {isUploadingLogo && <p className="admin-brand-form-muted">Uploading logo...</p>}
+                {form.logoPath?.trim() && (
+                  <div className="admin-brand-form-logo-preview">
+                    <img src={form.logoPath} alt={`${form.brandName || 'Brand'} logo preview`} />
+                  </div>
+                )}
+              </div>
+
+              <div className="admin-brand-form-logo-actions">
+                {form.logoPath?.trim() && (
+                  <button
+                    type="button"
+                    className="admin-brand-form-btn admin-brand-form-btn-ghost"
+                    onClick={() => updateBrand({ logoPath: '' })}
+                  >
+                    Remove logo
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 

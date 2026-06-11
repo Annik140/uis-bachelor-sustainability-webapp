@@ -3,6 +3,7 @@ namespace uis_bachelor_sustainability_webapp.Models;
 public class BrandUpsertDto
 {
     public required string BrandName { get; set; }
+    public string? LogoPath { get; set; }
     public string? Description { get; set; }
     public string? Category { get; set; }
     public List<BrandEvidenceSourceInputDto>? EvidenceSources { get; set; }

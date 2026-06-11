@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using System.Text.RegularExpressions;
 using uis_bachelor_sustainability_webapp.Data;
 using uis_bachelor_sustainability_webapp.Models;
 using uis_bachelor_sustainability_webapp.Services;
@@ -140,6 +141,7 @@ public class Program
         {
             app.UseHttpsRedirection();
         }
+        app.UseStaticFiles();
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -329,6 +331,50 @@ public class Program
             return Results.Ok();
         }).RequireAuthorization("AdminOnly");
 
+        app.MapPost("/admin/upload-logo", async (HttpRequest request) =>
+        {
+            if (!request.HasFormContentType)
+            {
+                return Results.BadRequest(new { message = "Expected multipart/form-data." });
+            }
+
+            var form = await request.ReadFormAsync();
+            var file = form.Files["file"];
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(new { message = "No file was uploaded." });
+            }
+
+            const long maxBytes = 3 * 1024 * 1024;
+            if (file.Length > maxBytes)
+            {
+                return Results.BadRequest(new { message = "Logo must be 3MB or smaller." });
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".png", ".jpg", ".jpeg", ".webp"
+            };
+            if (!allowedExtensions.Contains(extension))
+            {
+                return Results.BadRequest(new { message = "Unsupported image format. Use PNG, JPG, JPEG, or WEBP." });
+            }
+
+            var logosDirectory = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "brand-logos");
+            Directory.CreateDirectory(logosDirectory);
+
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var fullPath = Path.Combine(logosDirectory, fileName);
+            await using (var stream = File.Create(fullPath))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var logoPath = $"/brand-logos/{fileName}";
+            return Results.Ok(new { logoPath });
+        }).RequireAuthorization("AdminOnly");
+
         // Admin-protected CRUD endpoints for ClothingBrands
         app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db) =>
         {
@@ -341,6 +387,7 @@ public class Program
             var entity = new ClothingBrand
             {
                 BrandName = input.BrandName.Trim(),
+                LogoPath = input.LogoPath?.Trim(),
                 Description = input.Description?.Trim(),
                 Category = input.Category?.Trim(),
                 EvidenceSourceCount = 0,
@@ -374,6 +421,7 @@ public class Program
                 .FirstOrDefaultAsync(b => b.Id == id);
             if (existing is null) return Results.NotFound();
             existing.BrandName = input.BrandName.Trim();
+            existing.LogoPath = input.LogoPath?.Trim();
             existing.Description = input.Description?.Trim();
             existing.Category = input.Category?.Trim();
             existing.EvidenceSourceCount = 0;
@@ -507,6 +555,20 @@ public class Program
             else if (input.BrandName.Trim().Length > 200)
             {
                 AddError(errors, nameof(input.BrandName), "BrandName must be at most 200 characters.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(input.LogoPath))
+            {
+                var logoPath = input.LogoPath.Trim();
+                if (logoPath.Length > 300)
+                {
+                    AddError(errors, nameof(input.LogoPath), "LogoPath must be at most 300 characters.");
+                }
+
+                if (!Regex.IsMatch(logoPath, "^/brand-logos/[a-zA-Z0-9_-]+\\.(png|jpg|jpeg|webp)$", RegexOptions.IgnoreCase))
+                {
+                    AddError(errors, nameof(input.LogoPath), "LogoPath must point to an uploaded image under /brand-logos.");
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(input.Description) && input.Description.Trim().Length > 1000)
@@ -802,11 +864,13 @@ public class Program
             string category,
             List<BrandCriterionItem> criteria,
             IReadOnlyList<string> certifications,
-            string sourceTitle)
+            string sourceTitle,
+            string? logoPath = null)
         {
             var brand = new ClothingBrand
             {
                 BrandName = brandName,
+                LogoPath = logoPath,
                 Description = description,
                 Category = category,
                 CreatedAtUtc = DateTime.UtcNow,

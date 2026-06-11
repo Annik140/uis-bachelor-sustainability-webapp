@@ -36,6 +36,11 @@ export default defineConfig({
         target: 'http://localhost:5120',
         changeOrigin: true,
         secure: false,
+      },
+      '/brand-logos': {
+        target: 'http://localhost:5120',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }

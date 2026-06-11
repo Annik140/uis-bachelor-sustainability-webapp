@@ -9,6 +9,7 @@ import './App.css'
 type Brand = {
   id: number
   brandName: string
+  logoPath?: string
   description?: string
   category?: string
   prosSummary?: string
@@ -403,7 +404,11 @@ function App() {
                     }}
                   >
                     <div className="brand-card-top">
-                      <h3 className="brand-title">{brand.brandName}</h3>
+                      {brand.logoPath?.trim() ? (
+                        <img className="brand-logo" src={brand.logoPath} alt={`${brand.brandName} logo`} loading="lazy" />
+                      ) : (
+                        <h3 className="brand-title">{brand.brandName}</h3>
+                      )}
                     </div>
 
                     <div className="brand-card-body">

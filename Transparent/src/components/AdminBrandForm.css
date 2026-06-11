@@ -69,6 +69,113 @@
   margin-top: 10px;
 }
 
+.admin-brand-form-brand-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.admin-brand-form-brand-copy-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand-form-description-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand-form-description-control {
+  flex: 0 0 auto;
+  min-height: 124px;
+  resize: vertical;
+}
+
+.admin-brand-form-logo-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand-form-logo-file-input {
+  display: none;
+}
+
+.admin-brand-form-logo-dropzone {
+  margin-top: 8px;
+  border: 2px dashed #cfc8bc;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.admin-brand-form-logo-dropzone:hover {
+  border-color: #938a79;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #d9d1c4;
+}
+
+.admin-brand-form-logo-dropzone-active {
+  border-color: #1f6d52;
+  background: #ffffff;
+}
+
+.admin-brand-form-logo-dropzone:focus-visible {
+  outline: 3px solid #1c1c1c;
+  outline-offset: 2px;
+}
+
+.admin-brand-form-logo-dropzone-copy {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.admin-brand-form-logo-dropzone-or {
+  color: #655f56;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.admin-brand-form-logo-dropzone-title {
+  margin: 0;
+  color: #2f2c27;
+  font-size: 15px;
+}
+
+.admin-brand-form-logo-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-brand-form-logo-preview {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-brand-form-logo-preview img {
+  width: min(100%, 190px);
+  height: 120px;
+  object-fit: contain;
+  border: 1px solid #d8d1c3;
+  background: #f7f4ee;
+  padding: 6px;
+}
+
 .admin-brand-form-control {
   border: 1px solid #cfc8bc;
   background: #ffffff;
@@ -250,5 +357,9 @@
   .admin-brand-form-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .admin-brand-form-brand-details-grid {
+    grid-template-columns: 1fr;
   }
 }
