@@ -12,13 +12,15 @@ jobs:
   backend:
     name: Backend Build and Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '9.0.x'
 
@@ -28,38 +30,35 @@ jobs:
       - name: Build backend
         run: dotnet build uis-bachelor-sustainability-webapp.csproj --configuration Release --no-restore
 
+      - name: Build backend tests
+        run: dotnet build tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --no-restore
+
       - name: Run backend tests
-        run: dotnet test tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+        run: dotnet test tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory tests/uis-bachelor-sustainability-webapp.Tests/TestResults --collect:"XPlat Code Coverage"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-results
-          path: '**/TestResults/**'
+          path: tests/uis-bachelor-sustainability-webapp.Tests/TestResults/**
           retention-days: 30
-
-      - name: Publish test results
-        if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: '**/TestResults/**/*.trx'
-          check_name: Backend Test Results
-          comment_mode: always
 
   frontend:
     name: Frontend Lint and Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: Transparent
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
