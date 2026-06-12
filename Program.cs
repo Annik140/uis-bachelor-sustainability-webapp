@@ -47,6 +47,8 @@ public class Program
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
         }
+        builder.Services.AddScoped<IDbCommitter, DefaultDbCommitter>();
+        builder.Services.AddSingleton<ILogoFileOperations, DefaultLogoFileOperations>();
         builder.Services.AddScoped<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
         builder.Services.AddRateLimiter(options =>
         {
@@ -313,7 +315,7 @@ public class Program
             return Results.Ok();
         }).RequireAuthorization("AdminOnly");
 
-        app.MapPost("/admin/upload-logo", async (HttpRequest request) =>
+        app.MapPost("/admin/upload-logo", async (HttpRequest request, ILogoFileOperations fileOperations) =>
         {
             if (!request.HasFormContentType)
             {
@@ -344,13 +346,12 @@ public class Program
             }
 
             var logosDirectory = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "brand-logos");
-            Directory.CreateDirectory(logosDirectory);
-
             var fileName = $"{Guid.NewGuid():N}{extension}";
             var fullPath = Path.Combine(logosDirectory, fileName);
             try
             {
-                await using (var stream = File.Create(fullPath))
+                fileOperations.EnsureDirectory(logosDirectory);
+                await using (var stream = fileOperations.CreateWriteStream(fullPath))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -368,18 +369,18 @@ public class Program
             return Results.Ok(new { logoPath });
         }).RequireAuthorization("AdminOnly");
 
-        app.MapDelete("/admin/upload-logo", (string logoPath) =>
+        app.MapDelete("/admin/upload-logo", (string logoPath, ILogoFileOperations fileOperations) =>
         {
             if (string.IsNullOrWhiteSpace(logoPath))
             {
                 return Results.BadRequest(new { message = "logoPath parameter is required." });
             }
-            DeleteLogoFile(app, logoPath);
+            DeleteLogoFile(app, logoPath, fileOperations);
             return Results.NoContent();
         }).RequireAuthorization("AdminOnly");
 
         // Admin-protected CRUD endpoints for ClothingBrands
-        app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db, ILogger<Program> logger) =>
+        app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db, IDbCommitter dbCommitter, ILogger<Program> logger) =>
         {
             var validationErrors = ValidateBrandInput(input);
             if (validationErrors.Count > 0)
@@ -406,7 +407,7 @@ public class Program
                 BrandScoreCalculator.ApplyScores(entity);
 
                 db.ClothingBrands.Add(entity);
-                await db.SaveChangesAsync();
+                await dbCommitter.CommitAsync(db);
                 return Results.Created($"/brands/{entity.Id}", entity);
             }
             catch (DbUpdateException ex)
@@ -421,7 +422,7 @@ public class Program
             }
         }).RequireAuthorization("AdminOnly");
 
-        app.MapPut("/admin/clothingbrands/{id:int}", async (int id, BrandUpsertDto input, AppDbContext db, ILogger<Program> logger) =>
+        app.MapPut("/admin/clothingbrands/{id:int}", async (int id, BrandUpsertDto input, AppDbContext db, IDbCommitter dbCommitter, ILogoFileOperations fileOperations, ILogger<Program> logger) =>
         {
             var validationErrors = ValidateBrandInput(input);
             if (validationErrors.Count > 0)
@@ -449,11 +450,11 @@ public class Program
                 db.BrandCertifications.RemoveRange(existing.Certifications);
                 AddCertifications(existing, input);
                 BrandScoreCalculator.ApplyScores(existing);
-                await db.SaveChangesAsync();
+                await dbCommitter.CommitAsync(db);
                 var nextLogoPath = existing.LogoPath?.Trim();
                 if (!string.IsNullOrWhiteSpace(previousLogoPath) && !string.Equals(previousLogoPath, nextLogoPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    DeleteLogoFile(app, previousLogoPath);
+                    DeleteLogoFile(app, previousLogoPath, fileOperations);
                 }
                 return Results.Ok(existing);
             }
@@ -469,7 +470,7 @@ public class Program
             }
         }).RequireAuthorization("AdminOnly");
 
-        app.MapDelete("/admin/clothingbrands/{id:int}", async (int id, AppDbContext db, ILogger<Program> logger) =>
+        app.MapDelete("/admin/clothingbrands/{id:int}", async (int id, AppDbContext db, IDbCommitter dbCommitter, ILogoFileOperations fileOperations, ILogger<Program> logger) =>
         {
             try
             {
@@ -477,8 +478,8 @@ public class Program
                 if (existing is null) return Results.NotFound();
                 var logoPath = existing.LogoPath;
                 db.ClothingBrands.Remove(existing);
-                await db.SaveChangesAsync();
-                DeleteLogoFile(app, logoPath);
+                await dbCommitter.CommitAsync(db);
+                DeleteLogoFile(app, logoPath, fileOperations);
                 return Results.NoContent();
             }
             catch (DbUpdateException ex)
@@ -744,7 +745,7 @@ public class Program
             }
         }
 
-        static void DeleteLogoFile(WebApplication app, string? logoPath)
+        static void DeleteLogoFile(WebApplication app, string? logoPath, ILogoFileOperations fileOperations)
         {
             if (string.IsNullOrWhiteSpace(logoPath))
             {
@@ -764,11 +765,11 @@ public class Program
 
             var logosDirectory = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "brand-logos");
             var fullPath = Path.Combine(logosDirectory, fileName);
-            if (File.Exists(fullPath))
+            if (fileOperations.FileExists(fullPath))
             {
                 try
                 {
-                    File.Delete(fullPath);
+                    fileOperations.DeleteFile(fullPath);
                 }
                 catch (IOException ex)
                 {
@@ -780,5 +781,49 @@ public class Program
                 }
             }
         }
+    }
+}
+
+public interface IDbCommitter
+{
+    Task CommitAsync(AppDbContext db, CancellationToken cancellationToken = default);
+}
+
+public sealed class DefaultDbCommitter : IDbCommitter
+{
+    public async Task CommitAsync(AppDbContext db, CancellationToken cancellationToken = default)
+    {
+        await db.SaveChangesAsync(cancellationToken);
+    }
+}
+
+public interface ILogoFileOperations
+{
+    void EnsureDirectory(string path);
+    Stream CreateWriteStream(string fullPath);
+    bool FileExists(string fullPath);
+    void DeleteFile(string fullPath);
+}
+
+public sealed class DefaultLogoFileOperations : ILogoFileOperations
+{
+    public void EnsureDirectory(string path)
+    {
+        Directory.CreateDirectory(path);
+    }
+
+    public Stream CreateWriteStream(string fullPath)
+    {
+        return File.Create(fullPath);
+    }
+
+    public bool FileExists(string fullPath)
+    {
+        return File.Exists(fullPath);
+    }
+
+    public void DeleteFile(string fullPath)
+    {
+        File.Delete(fullPath);
     }
 }
