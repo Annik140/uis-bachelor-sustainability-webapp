@@ -277,11 +277,11 @@ public class Program
             var username = dto.Username?.Trim();
             var password = dto.Password ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(username) || password.Length < 12)
+            if (string.IsNullOrWhiteSpace(username) || password.Length < 6)
             {
                 return Results.BadRequest(new
                 {
-                    message = "Username is required and password must be at least 12 characters."
+                    message = "Username is required and password must be at least 6 characters."
                 });
             }
 

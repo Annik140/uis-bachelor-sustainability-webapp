@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace uis_bachelor_sustainability_webapp.Tests;
 
-public class AdminApiCriticalHighTests
+public class AdminApiSecurityAndAuthTests
 {
     [Fact]
     public async Task Login_WithInvalidPassword_ReturnsUnauthorized()
@@ -506,7 +506,7 @@ public class AdminApiCriticalHighTests
         using var request = BuildJsonRequest(HttpMethod.Post, "/admin/users", csrfToken, new
         {
             username = "newadmin",
-            password = "too-short"
+            password = "short"
         });
 
         var response = await client.SendAsync(request);

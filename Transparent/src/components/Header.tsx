@@ -48,9 +48,8 @@ export default function Header({
 
         <h1 className="header-title">Transparent</h1>
         <p className="header-subtitle">
-          A curated database documenting the sustainability practices of fashion brands. Entries represent the clothing brand (manufacturer) and scores reflect their production practices. Search, discover, and make informed choices.
+          Making fashion sustainability more transparent. Explore apparel brands, sustainability scores, and the publicly available information behind each evaluation.
         </p>
-
         <form className={`search-form ${isSearching ? 'search-form-active' : ''}`} onSubmit={handleSearch}>
           <input
             type="text"
@@ -61,7 +60,7 @@ export default function Header({
           />
         </form>
 
-        <p className="header-last-updated">Last update: {lastUpdatedLabel}</p>
+        <p className="header-last-updated">Data last updated: {lastUpdatedLabel}</p>
 
         {!isSearching && (
           <div className="stats-container">

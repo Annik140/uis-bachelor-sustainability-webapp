@@ -10,14 +10,14 @@ export default function Footer() {
           <div className="footer-section">
             <h3 className="footer-section-title">OUR MISSION</h3>
             <p className="footer-text">
-              Transparent provides verified data on fashion brands' environmental and ethical practices. We believe informed consumers drive sustainable change.
+              Transparent aims to make fashion sustainability information easier to access and understand through a structured database, helping users explore sustainability information across apparel brands.
             </p>
           </div>
 
           <div className="footer-section">
             <h3 className="footer-section-title">METHODOLOGY</h3>
             <p className="footer-text">
-              Scores are calculated from publicly available data, third-party certifications, and verified reports on materials, water use, labor practices, and circularity.
+              Scores are calculated using publicly available sustainability disclosures and reports. Brands are evaluated across materials, labor practices, carbon footprint, and product longevity.
             </p>
           </div>
         </div>
