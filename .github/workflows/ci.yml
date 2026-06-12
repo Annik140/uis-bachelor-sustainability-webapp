@@ -25,7 +25,9 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore backend
-        run: dotnet restore uis-bachelor-sustainability-webapp.csproj
+        run: |
+          dotnet restore uis-bachelor-sustainability-webapp.csproj
+          dotnet restore tests/uis-bachelor-sustainability-webapp.Tests/uis-bachelor-sustainability-webapp.Tests.csproj
 
       - name: Build backend
         run: dotnet build uis-bachelor-sustainability-webapp.csproj --configuration Release --no-restore
