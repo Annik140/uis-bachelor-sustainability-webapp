@@ -51,6 +51,32 @@ type Brand = {
   certifications?: Certification[]
 }
 
+function serializeBrandForDirtyCheck(brand: Brand) {
+  return JSON.stringify({
+    brandName: brand.brandName ?? '',
+    logoPath: brand.logoPath ?? '',
+    description: brand.description ?? '',
+    evidenceSources: (brand.evidenceSources ?? []).map(source => ({
+      sourceTitle: source.sourceTitle ?? '',
+      sourceUrl: source.sourceUrl ?? '',
+      sourceType: source.sourceType ?? '',
+      publishedAtUtc: source.publishedAtUtc ?? '',
+      notes: source.notes ?? '',
+    })),
+    criteriaItems: (brand.criteriaItems ?? []).map(item => ({
+      category: item.category ?? '',
+      name: item.name ?? '',
+      numericValue: item.numericValue ?? null,
+      unit: item.unit ?? '',
+      weight: item.weight ?? 1,
+      notes: item.notes ?? '',
+    })),
+    certifications: (brand.certifications ?? []).map(certification => ({
+      name: certification.name ?? '',
+    })),
+  })
+}
+
 const CERTIFICATION_OPTIONS = [
   'GOTS',
   'GRS',
@@ -196,13 +222,15 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(mode === 'edit')
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [isLogoDropActive, setIsLogoDropActive] = useState(false)
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null)
+  const [selectedLogoPreviewUrl, setSelectedLogoPreviewUrl] = useState<string | null>(null)
   const [isLogoPreviewBroken, setIsLogoPreviewBroken] = useState(false)
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false)
   const [editingSourceIndex, setEditingSourceIndex] = useState<number | null>(null)
   const [sourceTitleInput, setSourceTitleInput] = useState('')
   const [sourceUrlInput, setSourceUrlInput] = useState('')
   const logoFileInputRef = useRef<HTMLInputElement | null>(null)
+  const initialFormSnapshotRef = useRef<string>(serializeBrandForDirtyCheck(createEmptyBrand()))
 
   const title = mode === 'create' ? 'Add new brand' : 'Edit brand'
   const subtitle = mode === 'create'
@@ -215,6 +243,22 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
       items: DEFAULT_CRITERIA.filter(item => item.category === category)
     }))
   }, [])
+
+  const hasUnsavedChanges = useMemo(() => {
+    return serializeBrandForDirtyCheck(form) !== initialFormSnapshotRef.current || selectedLogoFile !== null
+  }, [form, selectedLogoFile])
+
+  useEffect(() => {
+    if (!selectedLogoFile) {
+      setSelectedLogoPreviewUrl(null)
+      return
+    }
+
+    const previewUrl = URL.createObjectURL(selectedLogoFile)
+    setSelectedLogoPreviewUrl(previewUrl)
+
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [selectedLogoFile])
 
   useEffect(() => {
     if (mode !== 'edit' || !brandId) {
@@ -256,12 +300,27 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
             certifications: data.certifications ?? [],
             criteriaItems: merged
           })
+
+          initialFormSnapshotRef.current = serializeBrandForDirtyCheck({
+            ...createEmptyBrand(),
+            ...data,
+            evidenceSources: data.evidenceSources ?? [],
+            certifications: data.certifications ?? [],
+            criteriaItems: merged
+          })
         }
       })
       .finally(() => setLoading(false))
   }, [brandId, mode])
 
   function backToDashboard() {
+    if (hasUnsavedChanges) {
+      const shouldLeave = window.confirm('You have unsaved changes. Are you sure you want to leave this page?')
+      if (!shouldLeave) {
+        return
+      }
+    }
+
     window.location.href = '/admin/dashboard'
   }
 
@@ -272,6 +331,10 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
   useEffect(() => {
     setIsLogoPreviewBroken(false)
   }, [form.logoPath])
+
+  useEffect(() => {
+    setIsLogoPreviewBroken(false)
+  }, [selectedLogoPreviewUrl])
 
   function isWebLink(value: string) {
     if (!value) return false
@@ -387,45 +450,16 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
       const data = await response.json().catch(() => null) as { logoPath?: string; message?: string } | null
       if (!response.ok || !data?.logoPath) {
         setError(data?.message ?? 'Failed to upload logo.')
-        return
+        return null
       }
 
-      updateBrand({ logoPath: data.logoPath })
+      return data.logoPath
     } catch {
       setError('Failed to upload logo. Please try again.')
+      return null
     } finally {
       setIsUploadingLogo(false)
     }
-  }
-
-  function handleLogoDrop(event: React.DragEvent<HTMLDivElement>) {
-    event.preventDefault()
-    setIsLogoDropActive(false)
-    const file = event.dataTransfer.files?.[0]
-    if (!file) {
-      return
-    }
-
-    const ext = (file.name.split('.').pop() ?? '').toLowerCase()
-    if (!['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
-      setError('Unsupported image format. Use PNG, JPG, JPEG, or WEBP.')
-      return
-    }
-
-    void uploadLogo(file)
-  }
-
-  function handleLogoPaste(event: React.ClipboardEvent<HTMLDivElement>) {
-    const pastedFile = Array.from(event.clipboardData.items)
-      .find(item => ['image/png', 'image/jpeg', 'image/webp'].includes(item.type.toLowerCase()))
-      ?.getAsFile()
-
-    if (!pastedFile) {
-      return
-    }
-
-    event.preventDefault()
-    void uploadLogo(pastedFile)
   }
 
   function openLogoFilePicker() {
@@ -437,7 +471,22 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     setError(null)
 
     try {
-      const payload = form
+      const previousLogoPath = form.logoPath?.trim() ?? ''
+      let finalLogoPath = previousLogoPath
+
+      if (selectedLogoFile) {
+        const uploadedLogoPath = await uploadLogo(selectedLogoFile)
+        if (!uploadedLogoPath) {
+          return
+        }
+        finalLogoPath = uploadedLogoPath
+      }
+
+      const payload = {
+        ...form,
+        logoPath: finalLogoPath
+      }
+
       const headers = await withCsrfHeaders({ 'Content-Type': 'application/json' })
       const response = mode === 'create'
         ? await fetch('/admin/clothingbrands', {
@@ -497,7 +546,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
           <h2>{title}</h2>
           <p>{subtitle}</p>
         </div>
-        <button type="button" onClick={backToDashboard} className="admin-brand-form-btn admin-brand-form-btn-ghost">Back to dashboard</button>
+        <button type="button" onClick={backToDashboard} className="admin-brand-form-btn admin-brand-form-btn-ghost">Back to admin dashboard</button>
       </div>
 
       <form onSubmit={handleSubmit} className="admin-brand-form-shell">
@@ -529,7 +578,10 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                   <button
                     type="button"
                     className="admin-brand-form-btn admin-brand-form-btn-ghost"
-                    onClick={() => updateBrand({ logoPath: '' })}
+                    onClick={() => {
+                      setSelectedLogoFile(null)
+                      updateBrand({ logoPath: '' })
+                    }}
                   >
                     Remove logo
                   </button>
@@ -545,30 +597,16 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                   const file = e.target.files?.[0]
                   e.currentTarget.value = ''
                   if (file) {
-                    void uploadLogo(file)
+                    setSelectedLogoFile(file)
                   }
                 }}
               />
 
               <div
-                className={`admin-brand-form-logo-dropzone ${isLogoDropActive ? 'admin-brand-form-logo-dropzone-active' : ''} ${form.logoPath?.trim() ? 'admin-brand-form-logo-dropzone-has-preview' : ''}`}
-                onDragOver={event => {
-                  event.preventDefault()
-                  setIsLogoDropActive(true)
-                }}
-                onDragEnter={event => {
-                  event.preventDefault()
-                  setIsLogoDropActive(true)
-                }}
-                onDragLeave={event => {
-                  event.preventDefault()
-                  setIsLogoDropActive(false)
-                }}
-                onDrop={handleLogoDrop}
-                onPaste={handleLogoPaste}
+                className={`admin-brand-form-logo-dropzone ${form.logoPath?.trim() ? 'admin-brand-form-logo-dropzone-has-preview' : ''}`}
                 tabIndex={0}
                 role="button"
-                aria-label="Drop, paste, or choose a brand logo"
+                aria-label="Click to upload a brand photo"
                 onClick={openLogoFilePicker}
                 onKeyDown={event => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -577,22 +615,20 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
                   }
                 }}
               >
-                {!form.logoPath?.trim() && <div className="admin-brand-form-logo-dropzone-copy" aria-hidden="true">
-                  <span className="admin-brand-form-logo-dropzone-title">Choose file</span>
-                  <span className="admin-brand-form-logo-dropzone-or">or</span>
-                  <span className="admin-brand-form-logo-dropzone-title">drop/paste image here.</span>
-                </div>}
+                {!form.logoPath?.trim() && (
+                  <span className="admin-brand-form-logo-upload-text">Click to upload photo</span>
+                )}
                 {isUploadingLogo && <p className="admin-brand-form-muted">Uploading logo...</p>}
-                {form.logoPath?.trim() && !isLogoPreviewBroken && (
+                {(selectedLogoPreviewUrl || form.logoPath?.trim()) && !isLogoPreviewBroken && (
                   <div className="admin-brand-form-logo-preview">
                     <img
-                      src={form.logoPath}
+                      src={selectedLogoPreviewUrl ?? form.logoPath}
                       alt=""
                       onError={() => setIsLogoPreviewBroken(true)}
                     />
                   </div>
                 )}
-                {form.logoPath?.trim() && isLogoPreviewBroken && (
+                {(selectedLogoPreviewUrl || form.logoPath?.trim()) && isLogoPreviewBroken && (
                   <p className="admin-brand-form-muted">Could not load logo preview. You can still save and verify on the card.</p>
                 )}
               </div>

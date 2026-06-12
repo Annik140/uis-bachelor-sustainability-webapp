@@ -357,6 +357,12 @@ public class Program
             return Results.Ok(new { logoPath });
         }).RequireAuthorization("AdminOnly");
 
+        app.MapDelete("/admin/upload-logo", (string logoPath) =>
+        {
+            DeleteLogoFile(app, logoPath);
+            return Results.NoContent();
+        }).RequireAuthorization("AdminOnly");
+
         // Admin-protected CRUD endpoints for ClothingBrands
         app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db) =>
         {
@@ -401,6 +407,7 @@ public class Program
                 .Include(b => b.Certifications)
                 .FirstOrDefaultAsync(b => b.Id == id);
             if (existing is null) return Results.NotFound();
+            var previousLogoPath = existing.LogoPath?.Trim();
             existing.BrandName = input.BrandName.Trim();
             existing.LogoPath = input.LogoPath?.Trim();
             existing.Description = input.Description?.Trim();
@@ -413,6 +420,11 @@ public class Program
             AddCertifications(existing, input);
             BrandScoreCalculator.ApplyScores(existing);
             await db.SaveChangesAsync();
+            var nextLogoPath = existing.LogoPath?.Trim();
+            if (!string.IsNullOrWhiteSpace(previousLogoPath) && !string.Equals(previousLogoPath, nextLogoPath, StringComparison.OrdinalIgnoreCase))
+            {
+                DeleteLogoFile(app, previousLogoPath);
+            }
             return Results.Ok(existing);
         }).RequireAuthorization("AdminOnly");
 
@@ -420,8 +432,10 @@ public class Program
         {
             var existing = await db.ClothingBrands.FindAsync(id);
             if (existing is null) return Results.NotFound();
+            var logoPath = existing.LogoPath;
             db.ClothingBrands.Remove(existing);
             await db.SaveChangesAsync();
+            DeleteLogoFile(app, logoPath);
             return Results.NoContent();
         }).RequireAuthorization("AdminOnly");
 
@@ -673,6 +687,32 @@ public class Program
                     Name = name!,
                     CreatedAtUtc = DateTime.UtcNow
                 });
+            }
+        }
+
+        static void DeleteLogoFile(WebApplication app, string? logoPath)
+        {
+            if (string.IsNullOrWhiteSpace(logoPath))
+            {
+                return;
+            }
+
+            if (!Regex.IsMatch(logoPath, @"^/brand-logos/[a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp)$", RegexOptions.IgnoreCase))
+            {
+                return;
+            }
+
+            var fileName = Path.GetFileName(logoPath);
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return;
+            }
+
+            var logosDirectory = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "brand-logos");
+            var fullPath = Path.Combine(logosDirectory, fileName);
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
             }
         }
     }
