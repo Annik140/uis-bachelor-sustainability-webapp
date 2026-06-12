@@ -1,4 +1,4 @@
-﻿using uis_bachelor_sustainability_webapp.Models;
+using uis_bachelor_sustainability_webapp.Models;
 using uis_bachelor_sustainability_webapp.Services;
 
 namespace uis_bachelor_sustainability_webapp.Tests;

@@ -568,15 +568,6 @@ body {
     padding: 0 16px;
   }
 
-  .brands-grid-shell {
-    padding-right: 0;
-  }
-
-  .brands-grid {
-    gap: 20px;
-    grid-template-columns: 1fr;
-  }
-
   .brand-card {
     min-height: 316px;
   }
@@ -596,6 +587,8 @@ body {
   }
 
   .brand-description-preview {
+    font-size: 14px;
+  }
 
   .brand-logo {
     width: 100%;
@@ -604,11 +597,14 @@ body {
     object-fit: contain;
     display: block;
   }
-    font-size: 14px;
-  }
 
   .score-chip-value {
     font-size: 16px;
+  }
+
+  .dashboard-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .brand-modal {
@@ -626,13 +622,31 @@ body {
 
 @media (max-width: 1220px) {
   .brands-grid {
-    grid-template-columns: repeat(3, 270px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .brand-card {
+    width: 100%;
   }
 }
 
 @media (max-width: 920px) {
   .brands-grid {
-    grid-template-columns: repeat(2, 270px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .brands-grid-shell {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .brands-grid {
+    grid-template-columns: 1fr;
   }
 }
 
