@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 
 namespace uis_bachelor_sustainability_webapp.Tests;
 
@@ -31,11 +29,7 @@ public class AdminApiIntegrationTests
             AllowAutoRedirect = false
         });
 
-        var login = await client.PostAsJsonAsync("/admin/login", new
-        {
-            username = TestAppFactory.BootstrapUser,
-            password = TestAppFactory.BootstrapPassword,
-        });
+        var login = await TestHttpHelpers.LoginAsync(client);
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
 
@@ -52,11 +46,7 @@ public class AdminApiIntegrationTests
             AllowAutoRedirect = false
         });
 
-        var login = await client.PostAsJsonAsync("/admin/login", new
-        {
-            username = TestAppFactory.BootstrapUser,
-            password = TestAppFactory.BootstrapPassword,
-        });
+        var login = await TestHttpHelpers.LoginAsync(client);
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
 
@@ -81,19 +71,11 @@ public class AdminApiIntegrationTests
             AllowAutoRedirect = false
         });
 
-        var login = await client.PostAsJsonAsync("/admin/login", new
-        {
-            username = TestAppFactory.BootstrapUser,
-            password = TestAppFactory.BootstrapPassword,
-        });
+        var login = await TestHttpHelpers.LoginAsync(client);
 
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
 
-        var csrfResponse = await client.GetAsync("/admin/csrf-token");
-        Assert.Equal(HttpStatusCode.OK, csrfResponse.StatusCode);
-        var csrfPayload = await csrfResponse.Content.ReadFromJsonAsync<CsrfTokenPayload>();
-        Assert.NotNull(csrfPayload);
-        Assert.False(string.IsNullOrWhiteSpace(csrfPayload!.Token));
+        var csrfToken = await TestHttpHelpers.GetCsrfTokenAsync(client);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/admin/clothingbrands")
         {
@@ -106,35 +88,10 @@ public class AdminApiIntegrationTests
                 certifications = Array.Empty<object>(),
             })
         };
-        request.Headers.Add("X-CSRF-TOKEN", csrfPayload.Token);
+        request.Headers.Add("X-CSRF-TOKEN", csrfToken);
 
         var createResponse = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-    }
-
-    private sealed record CsrfTokenPayload(string Token);
-}
-
-internal sealed class TestAppFactory : WebApplicationFactory<Program>
-{
-    public const string BootstrapUser = "testadmin";
-    public const string BootstrapPassword = "test-password-1234";
-
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        builder.UseEnvironment("Testing");
-
-        builder.ConfigureAppConfiguration((_, configBuilder) =>
-        {
-            var values = new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Port=5432;Database=ignored;Username=ignored;Password=ignored",
-                ["ADMIN_BOOTSTRAP_USER"] = BootstrapUser,
-                ["ADMIN_BOOTSTRAP_PASSWORD"] = BootstrapPassword,
-            };
-
-            configBuilder.AddInMemoryCollection(values);
-        });
     }
 }

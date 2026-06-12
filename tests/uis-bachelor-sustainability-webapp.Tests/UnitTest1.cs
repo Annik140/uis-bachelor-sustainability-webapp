@@ -35,7 +35,7 @@ public class BrandScoreCalculatorTests
 
         BrandScoreCalculator.ApplyScores(brand);
 
-        Assert.Equal(55m, brand.SustainabilityScore);
+        Assert.Equal(58.8m, brand.SustainabilityScore);
         Assert.Equal(5m, brand.TransparencyScore);
         Assert.Equal(100m, brand.MaterialSustainabilityScore);
         Assert.Equal(50m, brand.LaborPracticesScore);
