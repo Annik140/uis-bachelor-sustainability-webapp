@@ -83,7 +83,7 @@ public class AdminApiFailureInjectionTests
         SetFailureMode(factory, TestFailureMode.UploadIo);
 
         using var multipart = new MultipartFormDataContent();
-        using var fileContent = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47]);
+        using var fileContent = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         multipart.Add(fileContent, "file", "logo.png");
 

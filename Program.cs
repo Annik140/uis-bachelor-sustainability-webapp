@@ -211,6 +211,16 @@ public class Program
         // Admin login endpoint, signs in cookie if credentials match env vars
         app.MapPost("/admin/login", async (HttpContext ctx, AppDbContext db, IPasswordHasher<AdminUser> passwordHasher) =>
         {
+            if (!IsTrustedLoginRequest(ctx.Request, isLocalLikeEnvironment))
+            {
+                app.Logger.LogWarning(
+                    "Blocked admin login attempt due to untrusted request origin. Host: {Host}, Origin: {Origin}, Referer: {Referer}",
+                    ctx.Request.Host.Value,
+                    ctx.Request.Headers.Origin.ToString(),
+                    ctx.Request.Headers.Referer.ToString());
+                return Results.BadRequest(new { message = "Untrusted login request origin." });
+            }
+
             var dto = await ctx.Request.ReadFromJsonAsync<Models.LoginDto>();
             var username = dto?.Username?.Trim();
             var password = dto?.Password ?? string.Empty;
@@ -343,6 +353,11 @@ public class Program
             if (!allowedExtensions.Contains(extension))
             {
                 return Results.BadRequest(new { message = "Unsupported image format. Use PNG, JPG, JPEG, or WEBP." });
+            }
+
+            if (!HasValidImageSignature(file, extension))
+            {
+                return Results.BadRequest(new { message = "File content does not match the declared image format." });
             }
 
             var logosDirectory = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "brand-logos");
@@ -499,6 +514,91 @@ public class Program
         static string NormalizeUsername(string username)
         {
             return username.Trim().ToUpperInvariant();
+        }
+
+        static bool IsTrustedLoginRequest(HttpRequest request, bool allowLocalLike)
+        {
+            if (allowLocalLike)
+            {
+                return true;
+            }
+
+            if (TryParseHeaderUri(request.Headers.Origin.ToString(), out var originUri))
+            {
+                return IsSameHost(originUri!, request.Host);
+            }
+
+            if (TryParseHeaderUri(request.Headers.Referer.ToString(), out var refererUri))
+            {
+                return IsSameHost(refererUri!, request.Host);
+            }
+
+            return false;
+        }
+
+        static bool TryParseHeaderUri(string value, out Uri? uri)
+        {
+            uri = null;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            return Uri.TryCreate(value, UriKind.Absolute, out uri);
+        }
+
+        static bool IsSameHost(Uri uri, HostString host)
+        {
+            if (!host.HasValue)
+            {
+                return false;
+            }
+
+            if (!string.Equals(uri.Host, host.Host, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (host.Port.HasValue)
+            {
+                return uri.Port == host.Port.Value;
+            }
+
+            return uri.IsDefaultPort;
+        }
+
+        static bool HasValidImageSignature(IFormFile file, string extension)
+        {
+            using var stream = file.OpenReadStream();
+            Span<byte> header = stackalloc byte[12];
+            var bytesRead = stream.Read(header);
+
+            return extension.ToLowerInvariant() switch
+            {
+                ".png" => bytesRead >= 8 &&
+                          header[0] == 0x89 &&
+                          header[1] == 0x50 &&
+                          header[2] == 0x4E &&
+                          header[3] == 0x47 &&
+                          header[4] == 0x0D &&
+                          header[5] == 0x0A &&
+                          header[6] == 0x1A &&
+                          header[7] == 0x0A,
+                ".jpg" or ".jpeg" => bytesRead >= 3 &&
+                                       header[0] == 0xFF &&
+                                       header[1] == 0xD8 &&
+                                       header[2] == 0xFF,
+                ".webp" => bytesRead >= 12 &&
+                           header[0] == (byte)'R' &&
+                           header[1] == (byte)'I' &&
+                           header[2] == (byte)'F' &&
+                           header[3] == (byte)'F' &&
+                           header[8] == (byte)'W' &&
+                           header[9] == (byte)'E' &&
+                           header[10] == (byte)'B' &&
+                           header[11] == (byte)'P',
+                _ => false,
+            };
         }
 
         static bool IsAdminStateChangingRequest(HttpRequest request)

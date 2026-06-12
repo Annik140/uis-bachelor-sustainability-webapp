@@ -7,6 +7,7 @@ namespace uis_bachelor_sustainability_webapp.Data;
 public static class ApplicationDataInitializer
 {
     private const string SeedingModeConfigKey = "Seeding:Mode";
+    private const int MinAdminPasswordLength = 6;
 
     public static void Initialize(WebApplication app)
     {
@@ -103,6 +104,12 @@ public static class ApplicationDataInitializer
         if (exists)
         {
             return;
+        }
+
+        if (bootstrapPassword.Length < MinAdminPasswordLength)
+        {
+            logger.LogCritical("Bootstrap admin password is too short. It must be at least {MinLength} characters.", MinAdminPasswordLength);
+            throw new InvalidOperationException($"Bootstrap admin password must be at least {MinAdminPasswordLength} characters.");
         }
 
         var adminUser = new AdminUser
