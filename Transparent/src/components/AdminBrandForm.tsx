@@ -129,7 +129,7 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
     { label: 'Tier 1–4 / farm-level traceability', value: 100 }
   ] },
   { category: 'Material', name: 'Chemical management', inputKind: 'select', options: [
-    { label: 'No chemical management disclosure', value: 0 },
+    { label: 'No chemical management commitment', value: 0 },
     { label: 'Chemical policy only', value: 25 },
     { label: 'Restricted Substance List (RSL) or testing program', value: 50 },
     { label: 'Uses recognized standards (ZDHC, bluesign, OEKO-TEX)', value: 75 },
@@ -144,28 +144,28 @@ const DEFAULT_CRITERIA: CriterionDefinition[] = [
   ] },
   // Labor
   { category: 'Labor', name: 'Living wage commitment & coverage', inputKind: 'select', options: [
-    { label: 'No living wage disclosure', value: 0 },
+    { label: 'No living wage commitment', value: 0 },
     { label: 'Commitment only', value: 25 },
     { label: 'Pilot programs', value: 50 },
     { label: 'Partial documented coverage', value: 75 },
     { label: 'Majority coverage', value: 100 }
   ] },
   { category: 'Labor', name: 'Worker safety & working hours', inputKind: 'select', options: [
-    { label: 'No worker safety disclosure', value: 0 },
+    { label: 'No worker safety commitment', value: 0 },
     { label: 'Basic policy', value: 25 },
     { label: 'Audits conducted', value: 50 },
     { label: 'Performance metrics reported', value: 75 },
     { label: 'Strong verified safety performance', value: 100 }
   ] },
   { category: 'Labor', name: 'Freedom of association / grievance mechanisms', inputKind: 'select', options: [
-    { label: 'No grievance mechanism or FOA disclosure', value: 0 },
+    { label: 'No grievance mechanism or FOA', value: 0 },
     { label: 'Policy commitment only', value: 25 },
     { label: 'Grievance mechanism OR freedom of association policy disclosed', value: 50 },
     { label: 'Both grievance mechanism and freedom of association policy disclosed', value: 75 },
     { label: 'Evidence of usage, worker engagement, outcomes, or remediation reported', value: 100 }
   ] },
   { category: 'Labor', name: 'Supplier audit transparency', inputKind: 'select', options: [
-    { label: 'No supplier audit disclosure', value: 0 },
+    { label: 'No supplier audit', value: 0 },
     { label: 'States audits are conducted', value: 25 },
     { label: 'Describes audit process/frequency', value: 50 },
     { label: 'Publishes audit statistics or findings', value: 75 },
@@ -234,8 +234,8 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
   const title = mode === 'create' ? 'Add new brand' : 'Edit brand'
   const subtitle = mode === 'create'
-    ? 'Fill in the fixed subcriteria for each category.'
-    : 'Update the fixed subcriteria without changing the dashboard layout.'
+    ? 'Fill in the subcriteria for each category.'
+    : 'Update the subcriteria.'
 
   const groupedCriteria = useMemo(() => {
     return categoryValues.map(category => ({
@@ -681,7 +681,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
 
         <section className="admin-brand-form-section">
           <h3>Scoring rubric</h3>
-          <p className="admin-brand-form-muted">Fixed subcriteria are provided below for each category. Some boxes are numeric, others are simple dropdowns. Sources are attached to the brand (not per criterion).</p>
+          <p className="admin-brand-form-muted">Subcriteria are provided below for each category.</p>
           {groupedCriteria.map(group => (
             <div key={group.category} className="admin-brand-form-category-block">
               <h4>{categoryLabels[categoryValues.indexOf(group.category as (typeof categoryValues)[number])]}</h4>
