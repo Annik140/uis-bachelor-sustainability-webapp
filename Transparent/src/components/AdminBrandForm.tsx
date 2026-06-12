@@ -265,19 +265,30 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
       return
     }
 
-    fetch(`/admin/clothingbrands/${brandId}`, { credentials: 'include' })
-      .then(response => {
+    const loadBrand = async () => {
+      try {
+        setError(null)
+        const response = await fetch(`/admin/clothingbrands/${brandId}`, { credentials: 'include' })
+        
         if (response.status === 401) {
           window.location.href = '/admin/login'
-          return null
-        }
-
-        return response.ok ? response.json() : null
-      })
-      .then(data => {
-        if (data === null) {
           return
         }
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Brand not found.')
+          } else {
+            setError(`Failed to load brand (HTTP ${response.status}). Please try again.`)
+          }
+          setLoading(false)
+          return
+        }
+
+        const data = await response.json().catch(() => {
+          throw new Error('Invalid response format from server.')
+        })
+
         if (data) {
           // Merge existing criteria with defaults so fixed subcriteria are always present
           const existing: CriterionItem[] = data.criteriaItems ?? []
@@ -309,8 +320,16 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
             criteriaItems: merged
           })
         }
-      })
-      .finally(() => setLoading(false))
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred while loading the brand.'
+        setError(errorMessage)
+        console.error('Brand load error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadBrand()
   }, [brandId, mode])
 
   function backToDashboard() {
@@ -539,6 +558,23 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     return <div className="admin-brand-form-loading">Loading brand...</div>
   }
 
+  if (error && mode === 'edit') {
+    return (
+      <div className="admin-brand-form-page admin-brand-form-page-edit">
+        <div className="admin-brand-form-header">
+          <div className="admin-brand-form-header-copy">
+            <h2>{title}</h2>
+            <p>{subtitle}</p>
+          </div>
+          <button type="button" onClick={backToDashboard} className="admin-brand-form-btn admin-brand-form-btn-ghost">Back to admin dashboard</button>
+        </div>
+        <div className="admin-brand-form-error-banner">
+          <strong>Error loading brand:</strong> {error}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`admin-brand-form-page ${mode === 'create' ? 'admin-brand-form-page-create' : 'admin-brand-form-page-edit'}`}>
       <div className="admin-brand-form-header">
@@ -548,6 +584,13 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
         </div>
         <button type="button" onClick={backToDashboard} className="admin-brand-form-btn admin-brand-form-btn-ghost">Back to admin dashboard</button>
       </div>
+
+      {error && (
+        <div className="admin-brand-form-error-banner">
+          {error}
+          <button type="button" onClick={() => setError(null)} className="admin-brand-form-error-close">✕</button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="admin-brand-form-shell">
         <section className="admin-brand-form-section">

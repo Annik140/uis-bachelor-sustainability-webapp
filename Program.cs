@@ -348,9 +348,20 @@ public class Program
 
             var fileName = $"{Guid.NewGuid():N}{extension}";
             var fullPath = Path.Combine(logosDirectory, fileName);
-            await using (var stream = File.Create(fullPath))
+            try
             {
-                await file.CopyToAsync(stream);
+                await using (var stream = File.Create(fullPath))
+                {
+                    await file.CopyToAsync(stream);
+                }
+            }
+            catch (IOException)
+            {
+                return Results.Json(new { message = "Failed to save logo. Disk space may be full or file permissions insufficient." }, statusCode: StatusCodes.Status507InsufficientStorage);
+            }
+            catch (Exception)
+            {
+                return Results.Json(new { message = "An error occurred while uploading the logo." }, statusCode: StatusCodes.Status500InternalServerError);
             }
 
             var logoPath = $"/brand-logos/{fileName}";
@@ -359,12 +370,16 @@ public class Program
 
         app.MapDelete("/admin/upload-logo", (string logoPath) =>
         {
+            if (string.IsNullOrWhiteSpace(logoPath))
+            {
+                return Results.BadRequest(new { message = "logoPath parameter is required." });
+            }
             DeleteLogoFile(app, logoPath);
             return Results.NoContent();
         }).RequireAuthorization("AdminOnly");
 
         // Admin-protected CRUD endpoints for ClothingBrands
-        app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db) =>
+        app.MapPost("/admin/clothingbrands", async (BrandUpsertDto input, AppDbContext db, ILogger<Program> logger) =>
         {
             var validationErrors = ValidateBrandInput(input);
             if (validationErrors.Count > 0)
@@ -372,28 +387,41 @@ public class Program
                 return Results.ValidationProblem(validationErrors);
             }
 
-            var entity = new ClothingBrand
+            try
             {
-                BrandName = input.BrandName.Trim(),
-                LogoPath = input.LogoPath?.Trim(),
-                Description = input.Description?.Trim(),
-                EvidenceSourceCount = 0,
-                CreatedAtUtc = DateTime.UtcNow,
-                UpdatedAtUtc = DateTime.UtcNow
-            };
+                var entity = new ClothingBrand
+                {
+                    BrandName = input.BrandName.Trim(),
+                    LogoPath = input.LogoPath?.Trim(),
+                    Description = input.Description?.Trim(),
+                    EvidenceSourceCount = 0,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                };
 
-            AddEvidenceSources(entity, input);
-            AddCriteriaItems(entity, input);
-            AddCertifications(entity, input);
+                AddEvidenceSources(entity, input);
+                AddCriteriaItems(entity, input);
+                AddCertifications(entity, input);
 
-            BrandScoreCalculator.ApplyScores(entity);
+                BrandScoreCalculator.ApplyScores(entity);
 
-            db.ClothingBrands.Add(entity);
-            await db.SaveChangesAsync();
-            return Results.Created($"/brands/{entity.Id}", entity);
+                db.ClothingBrands.Add(entity);
+                await db.SaveChangesAsync();
+                return Results.Created($"/brands/{entity.Id}", entity);
+            }
+            catch (DbUpdateException ex)
+            {
+                logger.LogError(ex, "Database error while creating brand: {BrandName}", input.BrandName);
+                return Results.Json(new { message = "Failed to create brand. Please try again." }, statusCode: StatusCodes.Status500InternalServerError);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected error while creating brand: {BrandName}", input.BrandName);
+                return Results.Json(new { message = "An unexpected error occurred." }, statusCode: StatusCodes.Status500InternalServerError);
+            }
         }).RequireAuthorization("AdminOnly");
 
-        app.MapPut("/admin/clothingbrands/{id:int}", async (int id, BrandUpsertDto input, AppDbContext db) =>
+        app.MapPut("/admin/clothingbrands/{id:int}", async (int id, BrandUpsertDto input, AppDbContext db, ILogger<Program> logger) =>
         {
             var validationErrors = ValidateBrandInput(input);
             if (validationErrors.Count > 0)
@@ -401,42 +429,68 @@ public class Program
                 return Results.ValidationProblem(validationErrors);
             }
 
-            var existing = await db.ClothingBrands
-                .Include(b => b.EvidenceSources)
-                .Include(b => b.CriteriaItems)
-                .Include(b => b.Certifications)
-                .FirstOrDefaultAsync(b => b.Id == id);
-            if (existing is null) return Results.NotFound();
-            var previousLogoPath = existing.LogoPath?.Trim();
-            existing.BrandName = input.BrandName.Trim();
-            existing.LogoPath = input.LogoPath?.Trim();
-            existing.Description = input.Description?.Trim();
-            existing.EvidenceSourceCount = 0;
-            db.BrandEvidenceSources.RemoveRange(existing.EvidenceSources);
-            AddEvidenceSources(existing, input);
-            db.BrandCriterionItems.RemoveRange(existing.CriteriaItems);
-            AddCriteriaItems(existing, input);
-            db.BrandCertifications.RemoveRange(existing.Certifications);
-            AddCertifications(existing, input);
-            BrandScoreCalculator.ApplyScores(existing);
-            await db.SaveChangesAsync();
-            var nextLogoPath = existing.LogoPath?.Trim();
-            if (!string.IsNullOrWhiteSpace(previousLogoPath) && !string.Equals(previousLogoPath, nextLogoPath, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                DeleteLogoFile(app, previousLogoPath);
+                var existing = await db.ClothingBrands
+                    .Include(b => b.EvidenceSources)
+                    .Include(b => b.CriteriaItems)
+                    .Include(b => b.Certifications)
+                    .FirstOrDefaultAsync(b => b.Id == id);
+                if (existing is null) return Results.NotFound();
+                var previousLogoPath = existing.LogoPath?.Trim();
+                existing.BrandName = input.BrandName.Trim();
+                existing.LogoPath = input.LogoPath?.Trim();
+                existing.Description = input.Description?.Trim();
+                existing.EvidenceSourceCount = 0;
+                db.BrandEvidenceSources.RemoveRange(existing.EvidenceSources);
+                AddEvidenceSources(existing, input);
+                db.BrandCriterionItems.RemoveRange(existing.CriteriaItems);
+                AddCriteriaItems(existing, input);
+                db.BrandCertifications.RemoveRange(existing.Certifications);
+                AddCertifications(existing, input);
+                BrandScoreCalculator.ApplyScores(existing);
+                await db.SaveChangesAsync();
+                var nextLogoPath = existing.LogoPath?.Trim();
+                if (!string.IsNullOrWhiteSpace(previousLogoPath) && !string.Equals(previousLogoPath, nextLogoPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    DeleteLogoFile(app, previousLogoPath);
+                }
+                return Results.Ok(existing);
             }
-            return Results.Ok(existing);
+            catch (DbUpdateException ex)
+            {
+                logger.LogError(ex, "Database error while updating brand with id {BrandId}", id);
+                return Results.Json(new { message = "Failed to update brand. Please try again." }, statusCode: StatusCodes.Status500InternalServerError);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected error while updating brand with id {BrandId}", id);
+                return Results.Json(new { message = "An unexpected error occurred." }, statusCode: StatusCodes.Status500InternalServerError);
+            }
         }).RequireAuthorization("AdminOnly");
 
-        app.MapDelete("/admin/clothingbrands/{id:int}", async (int id, AppDbContext db) =>
+        app.MapDelete("/admin/clothingbrands/{id:int}", async (int id, AppDbContext db, ILogger<Program> logger) =>
         {
-            var existing = await db.ClothingBrands.FindAsync(id);
-            if (existing is null) return Results.NotFound();
-            var logoPath = existing.LogoPath;
-            db.ClothingBrands.Remove(existing);
-            await db.SaveChangesAsync();
-            DeleteLogoFile(app, logoPath);
-            return Results.NoContent();
+            try
+            {
+                var existing = await db.ClothingBrands.FindAsync(id);
+                if (existing is null) return Results.NotFound();
+                var logoPath = existing.LogoPath;
+                db.ClothingBrands.Remove(existing);
+                await db.SaveChangesAsync();
+                DeleteLogoFile(app, logoPath);
+                return Results.NoContent();
+            }
+            catch (DbUpdateException ex)
+            {
+                logger.LogError(ex, "Database error while deleting brand with id {BrandId}", id);
+                return Results.Json(new { message = "Failed to delete brand. Please try again." }, statusCode: StatusCodes.Status500InternalServerError);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected error while deleting brand with id {BrandId}", id);
+                return Results.Json(new { message = "An unexpected error occurred." }, statusCode: StatusCodes.Status500InternalServerError);
+            }
         }).RequireAuthorization("AdminOnly");
 
         app.Run();
@@ -712,7 +766,18 @@ public class Program
             var fullPath = Path.Combine(logosDirectory, fileName);
             if (File.Exists(fullPath))
             {
-                File.Delete(fullPath);
+                try
+                {
+                    File.Delete(fullPath);
+                }
+                catch (IOException ex)
+                {
+                    app.Logger.LogWarning(ex, "Failed to delete logo file: {FilePath}", fullPath);
+                }
+                catch (Exception ex)
+                {
+                    app.Logger.LogWarning(ex, "Unexpected error deleting logo file: {FilePath}", fullPath);
+                }
             }
         }
     }

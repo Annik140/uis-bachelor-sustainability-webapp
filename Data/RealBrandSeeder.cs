@@ -29,29 +29,32 @@ public static class RealBrandSeeder
 
     private static List<ClothingBrand> BuildSeedBrands()
     {
+        var template = GetDefaultCriteriaTemplate();
+
         return
         [
             BuildBrand(
                 brandName: "H&M Group",
                 description: "H&M (Hennes & Mauritz AB), is a Swedish multinational clothing company headquartered in Stockholm. The retailer sells apparel, accessories, and homeware.",
                 logoPath: "/brand-logos/dd5489280b0c4c0ba435ce98f5946a98.png",
-                criteria: BuildCriteria([
-                    ("Material", "Fiber traceability", 100m, null),
-                    ("Material", "Chemical management", 75m, null),
-                    ("Material", "Recycled content / Preferred material content", 32m, "%"),
-                    ("Material", "Certifications", 70m, null),
-                    ("Labor", "Living wage commitment & coverage", 25m, null),
-                    ("Labor", "Worker safety & working hours", 50m, null),
-                    ("Labor", "Freedom of association / grievance mechanisms", 75m, null),
-                    ("Labor", "Supplier audit transparency", 50m, null),
-                    ("Carbon", "Scope 1-3 measurement", 100m, null),
-                    ("Carbon", "Reduction targets & progress", 100m, null),
-                    ("Carbon", "Renewable energy", 48m, "%"),
-                    ("Carbon", "Transport & logistics", 50m, null),
-                    ("Longevity", "Durability Testing / Expected Lifetime", 50m, null),
-                    ("Longevity", "Repairability & Repair Services", 25m, null),
-                    ("Longevity", "Circularity Programs", 100m, null),
-                ]),
+                criteria: FillCriteria(template, new Dictionary<string, decimal>
+                {
+                    ["Material:Fiber traceability"] = 100,
+                    ["Material:Chemical management"] = 75,
+                    ["Material:Recycled content / Preferred material content"] = 32,
+                    ["Material:Certifications"] = 70,
+                    ["Labor:Living wage commitment & coverage"] = 25,
+                    ["Labor:Worker safety & working hours"] = 50,
+                    ["Labor:Freedom of association / grievance mechanisms"] = 75,
+                    ["Labor:Supplier audit transparency"] = 50,
+                    ["Carbon:Scope 1-3 measurement"] = 100,
+                    ["Carbon:Reduction targets & progress"] = 100,
+                    ["Carbon:Renewable energy"] = 48,
+                    ["Carbon:Transport & logistics"] = 50,
+                    ["Longevity:Durability Testing / Expected Lifetime"] = 50,
+                    ["Longevity:Repairability & Repair Services"] = 25,
+                    ["Longevity:Circularity Programs"] = 100,
+                }),
                 sources:
                 [
                     ("H&M Group Annual Sustainability Report 2025", "https://hmgroup.com/wp-content/uploads/2026/03/HM-Group-Annual-and-sustainability-report-2025.pdf"),
@@ -63,23 +66,21 @@ public static class RealBrandSeeder
                 brandName: "Nike Inc",
                 description: "Nike, Inc. is an American athletic footwear and apparel corporation with headquarter near Oregon. It is the world's largest supplier of athletic shoes and apparel, and a major manufacturer of sports equipment.",
                 logoPath: "/brand-logos/6b574513ff22448ebb8b43c2e1416425.webp",
-                criteria: BuildCriteria([
-                    ("Material", "Fiber traceability", 100m, null),
-                    ("Material", "Chemical management", 100m, null),
-                    ("Material", "Recycled content / Preferred material content", null, "%"),
-                    ("Material", "Certifications", 100m, null),
-                    ("Labor", "Living wage commitment & coverage", 25m, null),
-                    ("Labor", "Worker safety & working hours", 75m, null),
-                    ("Labor", "Freedom of association / grievance mechanisms", 75m, null),
-                    ("Labor", "Supplier audit transparency", 75m, null),
-                    ("Carbon", "Scope 1-3 measurement", 100m, null),
-                    ("Carbon", "Reduction targets & progress", 100m, null),
-                    ("Carbon", "Renewable energy", 96m, "%"),
-                    ("Carbon", "Transport & logistics", null, null),
-                    ("Longevity", "Durability Testing / Expected Lifetime", null, null),
-                    ("Longevity", "Repairability & Repair Services", 75m, null),
-                    ("Longevity", "Circularity Programs", 75m, null),
-                ]),
+                criteria: FillCriteria(template, new Dictionary<string, decimal>
+                {
+                    ["Material:Fiber traceability"] = 100,
+                    ["Material:Chemical management"] = 100,
+                    ["Material:Certifications"] = 100,
+                    ["Labor:Living wage commitment & coverage"] = 25,
+                    ["Labor:Worker safety & working hours"] = 75,
+                    ["Labor:Freedom of association / grievance mechanisms"] = 75,
+                    ["Labor:Supplier audit transparency"] = 75,
+                    ["Carbon:Scope 1-3 measurement"] = 100,
+                    ["Carbon:Reduction targets & progress"] = 100,
+                    ["Carbon:Renewable energy"] = 96,
+                    ["Longevity:Repairability & Repair Services"] = 75,
+                    ["Longevity:Circularity Programs"] = 75,
+                }),
                 sources:
                 [
                     ("FY24 Sustainability Data", "https://media.about.nike.com/files/f37dfe60-0341-4db1-8ab9-6156da717313/FY24-NIKE%2C-Inc.-Sustainability-Data.pdf"),
@@ -95,23 +96,24 @@ public static class RealBrandSeeder
                 brandName: "Patagonia, Inc",
                 description: "Patagonia, Inc. is an American retailer of outdoor recreation clothing, equipment, and food. It was founded 1973 and is based in California.",
                 logoPath: "/brand-logos/a0e21dd96e714d2d8894db1ee5a0d61f.png",
-                criteria: BuildCriteria([
-                    ("Material", "Fiber traceability", 100m, null),
-                    ("Material", "Chemical management", 75m, null),
-                    ("Material", "Recycled content / Preferred material content", 84m, "%"),
-                    ("Material", "Certifications", 100m, null),
-                    ("Labor", "Living wage commitment & coverage", 75m, null),
-                    ("Labor", "Worker safety & working hours", 75m, null),
-                    ("Labor", "Freedom of association / grievance mechanisms", 75m, null),
-                    ("Labor", "Supplier audit transparency", 50m, null),
-                    ("Carbon", "Scope 1-3 measurement", 75m, null),
-                    ("Carbon", "Reduction targets & progress", 75m, null),
-                    ("Carbon", "Renewable energy", 98m, "%"),
-                    ("Carbon", "Transport & logistics", 75m, null),
-                    ("Longevity", "Durability Testing / Expected Lifetime", 75m, null),
-                    ("Longevity", "Repairability & Repair Services", 100m, null),
-                    ("Longevity", "Circularity Programs", 25m, null),
-                ]),
+                criteria: FillCriteria(template, new Dictionary<string, decimal>
+                {
+                    ["Material:Fiber traceability"] = 100,
+                    ["Material:Chemical management"] = 75,
+                    ["Material:Recycled content / Preferred material content"] = 84,
+                    ["Material:Certifications"] = 100,
+                    ["Labor:Living wage commitment & coverage"] = 75,
+                    ["Labor:Worker safety & working hours"] = 75,
+                    ["Labor:Freedom of association / grievance mechanisms"] = 75,
+                    ["Labor:Supplier audit transparency"] = 50,
+                    ["Carbon:Scope 1-3 measurement"] = 75,
+                    ["Carbon:Reduction targets & progress"] = 75,
+                    ["Carbon:Renewable energy"] = 98,
+                    ["Carbon:Transport & logistics"] = 75,
+                    ["Longevity:Durability Testing / Expected Lifetime"] = 75,
+                    ["Longevity:Repairability & Repair Services"] = 100,
+                    ["Longevity:Circularity Programs"] = 25,
+                }),
                 sources:
                 [
                     ("Patagonia Progress Report 2025", "https://www.patagonia.com/media/pdf/patagonia-progress-report-2025.pdf"),
@@ -172,18 +174,45 @@ public static class RealBrandSeeder
         return brand;
     }
 
-    private static List<BrandCriterionItem> BuildCriteria(
-        IReadOnlyList<(string Category, string Name, decimal? NumericValue, string? Unit)> rows)
+    private static List<BrandCriterionItem> GetDefaultCriteriaTemplate()
     {
-        return rows.Select(row => new BrandCriterionItem
+        return
+        [
+            new() { Category = "Material", Name = "Fiber traceability", Unit = "%", Weight = 1m },
+            new() { Category = "Material", Name = "Chemical management", Weight = 1m },
+            new() { Category = "Material", Name = "Recycled content / Preferred material content", Unit = "%", Weight = 1m },
+            new() { Category = "Material", Name = "Certifications", Weight = 1m },
+            new() { Category = "Labor", Name = "Living wage commitment & coverage", Weight = 1m },
+            new() { Category = "Labor", Name = "Worker safety & working hours", Weight = 1m },
+            new() { Category = "Labor", Name = "Freedom of association / grievance mechanisms", Weight = 1m },
+            new() { Category = "Labor", Name = "Supplier audit transparency", Weight = 1m },
+            new() { Category = "Carbon", Name = "Scope 1-3 measurement", Weight = 1m },
+            new() { Category = "Carbon", Name = "Reduction targets & progress", Weight = 1m },
+            new() { Category = "Carbon", Name = "Renewable energy", Unit = "%", Weight = 1m },
+            new() { Category = "Carbon", Name = "Transport & logistics", Weight = 1m },
+            new() { Category = "Longevity", Name = "Durability Testing / Expected Lifetime", Weight = 1m },
+            new() { Category = "Longevity", Name = "Repairability & Repair Services", Weight = 1m },
+            new() { Category = "Longevity", Name = "Circularity Programs", Weight = 1m },
+        ];
+    }
+
+    private static List<BrandCriterionItem> FillCriteria(List<BrandCriterionItem> template, IReadOnlyDictionary<string, decimal> overrides)
+    {
+        return template.Select(item =>
         {
-            Category = row.Category,
-            Name = row.Name,
-            NumericValue = row.NumericValue,
-            Unit = row.Unit ?? string.Empty,
-            Weight = 1m,
-            Notes = string.Empty,
-            CreatedAtUtc = DateTime.UtcNow,
+            var key = $"{item.Category}:{item.Name}";
+            overrides.TryGetValue(key, out var value);
+
+            return new BrandCriterionItem
+            {
+                Category = item.Category,
+                Name = item.Name,
+                NumericValue = overrides.ContainsKey(key) ? value : null,
+                Unit = item.Unit,
+                Weight = item.Weight,
+                Notes = null,
+                CreatedAtUtc = DateTime.UtcNow,
+            };
         }).ToList();
     }
 }

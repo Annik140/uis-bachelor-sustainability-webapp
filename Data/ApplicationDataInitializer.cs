@@ -14,20 +14,36 @@ public static class ApplicationDataInitializer
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AdminUser>>();
 
-        if (app.Environment.IsEnvironment("Testing"))
+        try
         {
-            db.Database.EnsureCreated();
+            if (app.Environment.IsEnvironment("Testing"))
+            {
+                db.Database.EnsureCreated();
+            }
+            else
+            {
+                db.Database.Migrate();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            db.Database.Migrate();
+            app.Logger.LogCritical(ex, "Failed to initialize database. Migrations or database creation failed.");
+            throw;
         }
 
-        EnsureAdminBootstrapAccount(db, passwordHasher, app.Configuration, app.Logger);
-
-        if (!app.Environment.IsEnvironment("Testing"))
+        try
         {
-            ApplyBrandSeeding(db, app.Configuration, app.Logger);
+            EnsureAdminBootstrapAccount(db, passwordHasher, app.Configuration, app.Logger);
+
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                ApplyBrandSeeding(db, app.Configuration, app.Logger);
+            }
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogCritical(ex, "Failed to initialize application data (admin or brand seeding).");
+            throw;
         }
     }
 
