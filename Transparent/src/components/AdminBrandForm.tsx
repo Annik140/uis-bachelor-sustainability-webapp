@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react'
 import './AdminBrandForm.css'
 import { clearCsrfToken, withCsrfHeaders } from '../utils/csrf'
 
@@ -485,7 +485,7 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     logoFileInputRef.current?.click()
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     e.preventDefault()
     setError(null)
 

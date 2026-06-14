@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react'
 import './Header.css'
 
 type HeaderProps = {
@@ -27,7 +28,7 @@ export default function Header({
 }: HeaderProps) {
   const isSearching = searchQuery.trim().length > 0
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault()
   }
 

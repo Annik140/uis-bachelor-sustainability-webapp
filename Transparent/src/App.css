@@ -491,24 +491,12 @@ body {
   color: inherit;
 }
 
-.summary-list .summary-list-item.summary-list-item-strong {
+.summary-list .summary-list-item.summary-list-item-pro {
   color: #2f7f55;
 }
 
-.summary-list .summary-list-item.summary-list-item-moderate {
-  color: #4f9b6e;
-}
-
-.summary-list .summary-list-item.summary-list-item-weak {
-  color: #7eb68b;
-}
-
-.summary-list .summary-list-item.summary-list-item-concern {
+.summary-list .summary-list-item.summary-list-item-con {
   color: #b85b5b;
-}
-
-.summary-list .summary-list-item.summary-list-item-weak-concern {
-  color: #bf8746;
 }
 
 .summary-list .summary-list-item.summary-list-item-neutral {

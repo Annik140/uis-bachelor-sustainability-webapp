@@ -207,21 +207,97 @@ public static class BrandScoreCalculator
 
         return item.Name switch
         {
-            "Fiber traceability" => BuildFiveOptionDisplay("traceability", value),
-            "Chemical management" => BuildFiveOptionDisplay("chemical management", value),
-            "Recycled content / Preferred material content" => BuildPercentDisplay("recycled content", value),
+            "Fiber traceability" => BuildTieredDisplay(
+                value,
+                "no fiber traceability disclosed",
+                "traceability only covers direct suppliers",
+                "traceability covers early supply-chain tiers",
+                "traceability covers most supply-chain tiers",
+                "traceability reaches farm-level sources"),
+            "Chemical management" => BuildTieredDisplay(
+                value,
+                "no chemical management policy disclosed",
+                "chemical policy disclosed but with limited evidence",
+                "chemical controls and testing are in place",
+                "recognized chemical standards are used",
+                "chemical management is verified with published progress"),
+            "Recycled content / Preferred material content" => BuildHalfThresholdDisplay(
+                value,
+                "no recycled or preferred content disclosed",
+                "low recycled or preferred material use",
+                "high recycled or preferred material use",
+                "very high recycled or preferred material use"),
             "Certifications" => BuildCertificationDisplay(value),
-            "Living wage commitment & coverage" => BuildFiveOptionDisplay("living wage coverage", value),
-            "Worker safety & working hours" => BuildFiveOptionDisplay("worker safety", value),
-            "Freedom of association / grievance mechanisms" => BuildFiveOptionDisplay("worker voice", value),
-            "Supplier audit transparency" => BuildFiveOptionDisplay("audit transparency", value),
-            "Reduction targets & progress" => BuildFiveOptionDisplay("reduction targets", value),
-            "Renewable energy" => BuildPercentDisplay("renewable energy", value),
-            "Transport & logistics" => BuildFiveOptionDisplay("transport and logistics", value),
-            "Scope 1-3 measurement" => BuildFiveOptionDisplay("emissions measurement", value),
-            "Durability Testing / Expected Lifetime" => BuildFiveOptionDisplay("durability", value),
+            "Living wage commitment & coverage" => BuildTieredDisplay(
+                value,
+                "no living wage commitment disclosed",
+                "living wage commitment stated with limited coverage evidence",
+                "living wage pilot coverage reported",
+                "partial living wage coverage documented",
+                "majority living wage coverage documented"),
+            "Worker safety & working hours" => BuildTieredDisplay(
+                value,
+                "no worker safety commitments disclosed",
+                "basic worker safety policy disclosed",
+                "worker safety audits reported",
+                "worker safety performance metrics reported",
+                "strong verified worker safety performance"),
+            "Freedom of association / grievance mechanisms" => BuildTieredDisplay(
+                value,
+                "no worker voice or grievance mechanisms disclosed",
+                "policy commitment without implementation evidence",
+                "grievance mechanism or freedom-of-association policy disclosed",
+                "grievance mechanism and freedom-of-association policy disclosed",
+                "worker voice outcomes and remediation reported"),
+            "Supplier audit transparency" => BuildTieredDisplay(
+                value,
+                "no supplier audit transparency disclosed",
+                "audits mentioned without detail",
+                "audit process and frequency disclosed",
+                "audit findings or statistics published",
+                "supplier findings and corrective-action progress published"),
+            "Reduction targets & progress" => BuildTieredDisplay(
+                value,
+                "no emissions reduction targets disclosed",
+                "general climate commitment disclosed",
+                "quantified emissions reduction targets disclosed",
+                "science-based targets disclosed",
+                "science-based targets with measurable progress"),
+            "Renewable energy" => BuildHalfThresholdDisplay(
+                value,
+                "no renewable energy adoption disclosed",
+                "low renewable energy use",
+                "high renewable energy use",
+                "very high renewable energy use"),
+            "Transport & logistics" => BuildTieredDisplay(
+                value,
+                "no transport or logistics initiatives disclosed",
+                "limited logistics efficiency initiatives",
+                "specific lower-carbon logistics actions disclosed",
+                "comprehensive logistics strategy with targets",
+                "logistics strategy with measurable emissions results"),
+            "Scope 1-3 measurement" => BuildTieredDisplay(
+                value,
+                "no scope 1-3 emissions measurement disclosed",
+                "scope 1 emissions measurement disclosed",
+                "scope 1-2 emissions measurement disclosed",
+                "scope 1-3 emissions measurement disclosed",
+                "scope 1-3 measurement with methodology and trend data"),
+            "Durability Testing / Expected Lifetime" => BuildTieredDisplay(
+                value,
+                "no durability testing or lifetime evidence disclosed",
+                "general durability claims only",
+                "internal durability testing disclosed",
+                "standardized durability testing disclosed",
+                "standardized testing with published durability results"),
             "Repairability & Repair Services" => BuildRepairabilityDisplay(value),
-            "Circularity Programs" => BuildFiveOptionDisplay("circularity programs", value),
+            "Circularity Programs" => BuildTieredDisplay(
+                value,
+                "no circularity programs disclosed",
+                "general circularity commitment disclosed",
+                "one active circularity program disclosed",
+                "multiple active circularity programs disclosed",
+                "multiple circularity programs with measurable outcomes"),
             _ => BuildFiveOptionDisplay(item.Name.ToLowerInvariant(), value)
         };
     }
@@ -251,6 +327,7 @@ public static class BrandScoreCalculator
         return new CriterionDisplayInfo("repair services with measurable usage/results", CriterionDisplayTier.StrongStrength);
     }
 
+    // Fallback summary formatter, kept as safety net
     private static CriterionDisplayInfo BuildFiveOptionDisplay(string noun, decimal value)
     {
         if (value <= 0m)
@@ -276,9 +353,60 @@ public static class BrandScoreCalculator
         return new CriterionDisplayInfo($"high {noun}", CriterionDisplayTier.StrongStrength);
     }
 
-    private static CriterionDisplayInfo BuildPercentDisplay(string noun, decimal value)
+    private static CriterionDisplayInfo BuildTieredDisplay(
+        decimal value,
+        string concern,
+        string weakConcern,
+        string weakStrength,
+        string strength,
+        string strongStrength)
     {
-        return BuildFiveOptionDisplay(noun, value);
+        if (value <= 0m)
+        {
+            return new CriterionDisplayInfo(concern, CriterionDisplayTier.Concern);
+        }
+
+        if (value <= 25m)
+        {
+            return new CriterionDisplayInfo(weakConcern, CriterionDisplayTier.WeakConcern);
+        }
+
+        if (value <= 50m)
+        {
+            return new CriterionDisplayInfo(weakStrength, CriterionDisplayTier.WeakStrength);
+        }
+
+        if (value <= 75m)
+        {
+            return new CriterionDisplayInfo(strength, CriterionDisplayTier.Strength);
+        }
+
+        return new CriterionDisplayInfo(strongStrength, CriterionDisplayTier.StrongStrength);
+    }
+
+    private static CriterionDisplayInfo BuildHalfThresholdDisplay(
+        decimal value,
+        string noInfoConcern,
+        string underHalfConcern,
+        string atLeastHalfStrength,
+        string highStrength)
+    {
+        if (value <= 0m)
+        {
+            return new CriterionDisplayInfo(noInfoConcern, CriterionDisplayTier.Concern);
+        }
+
+        if (value < 50m)
+        {
+            return new CriterionDisplayInfo(underHalfConcern, CriterionDisplayTier.WeakConcern);
+        }
+
+        if (value < 75m)
+        {
+            return new CriterionDisplayInfo(atLeastHalfStrength, CriterionDisplayTier.Strength);
+        }
+
+        return new CriterionDisplayInfo(highStrength, CriterionDisplayTier.StrongStrength);
     }
 
     private static CriterionDisplayInfo BuildCertificationDisplay(decimal value)

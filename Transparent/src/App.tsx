@@ -156,7 +156,8 @@ function getSummaryTier(item: string, type: SummaryItemType): SummaryItemTier {
 }
 
 function getSummaryItemClass(type: SummaryItemType, tier: SummaryItemTier) {
-  return `summary-list-item summary-list-item-${type} summary-list-item-${tier}`
+  const neutralClass = tier === 'neutral' ? ' summary-list-item-neutral' : ''
+  return `summary-list-item summary-list-item-${type}${neutralClass}`
 }
 
 function App() {
@@ -627,10 +628,17 @@ function App() {
                     <div>
                       <h3>Strengths</h3>
                       <ul className="summary-list summary-list-pros">
-                        {(selectedBrand.prosSummary ?? 'No strengths recorded yet.')
-                          .split('\n')
-                          .filter(Boolean)
-                          .map((item, index) => {
+                        {(() => {
+                          const strengths = (selectedBrand.prosSummary ?? '')
+                            .split('\n')
+                            .map(item => item.trim())
+                            .filter(Boolean)
+
+                          const displayItems = strengths.length > 0
+                            ? strengths
+                            : ['No strengths recorded yet.']
+
+                          return displayItems.map((item, index) => {
                             const tier = getSummaryTier(item, 'pro')
 
                             return (
@@ -639,17 +647,32 @@ function App() {
                               <span>{item}</span>
                             </li>
                             )
-                          })}
+                          })
+                        })()}
                       </ul>
                     </div>
 
                     <div>
                       <h3>Concerns</h3>
                       <ul className="summary-list summary-list-cons">
-                        {(selectedBrand.consSummary ?? 'No concerns recorded yet.')
-                          .split('\n')
-                          .filter(Boolean)
-                          .map((item, index) => {
+                        {(() => {
+                          const concerns = (selectedBrand.consSummary ?? '')
+                            .split('\n')
+                            .map(item => item.trim())
+                            .filter(Boolean)
+
+                          const hasMissingCriterionInfo = (selectedBrand.criteriaItems ?? [])
+                            .some(item => item.numericValue === undefined || item.numericValue === null)
+
+                          if (hasMissingCriterionInfo && !concerns.some(item => item.toLowerCase() === 'missing information')) {
+                            concerns.push('Missing information')
+                          }
+
+                          const displayItems = concerns.length > 0
+                            ? concerns
+                            : ['No concerns recorded yet.']
+
+                          return displayItems.map((item, index) => {
                             const tier = getSummaryTier(item, 'con')
 
                             return (
@@ -658,7 +681,8 @@ function App() {
                               <span>{item}</span>
                             </li>
                             )
-                          })}
+                          })
+                        })()}
                       </ul>
                     </div>
                   </section>
