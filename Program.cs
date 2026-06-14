@@ -129,6 +129,8 @@ public class Program
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
+        // CSRF is enforced only for authenticated admin write operations.
+        // Public GET endpoints and the login endpoint are intentionally excluded.
         app.Use(async (ctx, next) =>
         {
             if (IsAdminStateChangingRequest(ctx.Request) &&
@@ -623,8 +625,21 @@ public class Program
             var filtered = db.ClothingBrands.AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(normalizedQuery))
             {
-                var query = normalizedQuery.ToLower();
-                filtered = filtered.Where(brand => brand.BrandName.ToLower().Contains(query));
+                var query = normalizedQuery.ToLowerInvariant();
+                var compactQuery = CompactSearchText(normalizedQuery);
+
+                // Match both the raw and compacted forms so queries like "hm" can match "H&M".
+                filtered = filtered.Where(brand =>
+                    brand.BrandName.ToLower().Contains(query) ||
+                    brand.BrandName.ToLower()
+                        .Replace("&", string.Empty)
+                        .Replace("-", string.Empty)
+                        .Replace("_", string.Empty)
+                        .Replace("'", string.Empty)
+                        .Replace(".", string.Empty)
+                        .Replace("/", string.Empty)
+                        .Replace(" ", string.Empty)
+                        .Contains(compactQuery));
             }
 
             var totalCount = await filtered.CountAsync();
@@ -671,6 +686,21 @@ public class Program
                 "alphabeticalasc" => query.OrderBy(brand => brand.BrandName),
                 _ => query.OrderByDescending(brand => brand.UpdatedAtUtc).ThenBy(brand => brand.BrandName),
             };
+        }
+
+        static string CompactSearchText(string value)
+        {
+            // Keep search forgiving by removing common separators and punctuation.
+            return value
+                .Trim()
+                .ToLowerInvariant()
+                .Replace("&", string.Empty)
+                .Replace("-", string.Empty)
+                .Replace("_", string.Empty)
+                .Replace("'", string.Empty)
+                .Replace(".", string.Empty)
+                .Replace("/", string.Empty)
+                .Replace(" ", string.Empty);
         }
 
         static void RefreshBrandScores(ClothingBrand brand)

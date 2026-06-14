@@ -168,6 +168,9 @@ function App() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [statsBrandCount, setStatsBrandCount] = useState(0)
+  const [statsAverageSustainability, setStatsAverageSustainability] = useState<number | undefined>(undefined)
+  const [statsDataCoverage, setStatsDataCoverage] = useState<number | undefined>(undefined)
   const [isAdminSessionActive, setIsAdminSessionActive] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
   const [brokenLogoBrandIds, setBrokenLogoBrandIds] = useState<Set<number>>(new Set())
@@ -211,26 +214,6 @@ function App() {
     year: 'numeric'
   }).format(latestUpdateMs > 0 ? new Date(latestUpdateMs) : new Date())
 
-  const sustainabilityValues = brands
-    .map(brand => normalizeSustainabilityScore(brand.sustainabilityScore))
-    .filter((value): value is number => value !== undefined)
-
-  const totalCriteriaCount = brands.reduce(
-    (sum, brand) => sum + (brand.criteriaItems?.length ?? 0),
-    0
-  )
-  const filledCriteriaCount = brands.reduce(
-    (sum, brand) => sum + (brand.criteriaItems?.filter(item => item.numericValue !== undefined && item.numericValue !== null).length ?? 0),
-    0
-  )
-
-  const averageSustainability = sustainabilityValues.length > 0
-    ? sustainabilityValues.reduce((sum, value) => sum + value, 0) / sustainabilityValues.length
-    : undefined
-  const dataCoverage = totalCriteriaCount > 0
-    ? (filledCriteriaCount / totalCriteriaCount) * 100
-    : undefined
-
   useEffect(() => {
     if (path.startsWith('/admin')) {
       return
@@ -269,6 +252,94 @@ function App() {
       disposed = true
       window.clearInterval(intervalId)
       window.removeEventListener('focus', onFocus)
+    }
+  }, [path])
+
+  useEffect(() => {
+    if (path.startsWith('/admin')) {
+      return
+    }
+
+    let disposed = false
+
+    const fetchDashboardStats = async () => {
+      // Header stats are intentionally based on the full dataset, not the current search result page.
+      const statsPageSize = 200
+      let currentPage = 1
+      let totalPagesFromApi = 1
+      let totalCountFromApi = 0
+      const allBrands: Brand[] = []
+
+      try {
+        do {
+          const query = new URLSearchParams({
+            page: String(currentPage),
+            pageSize: String(statsPageSize),
+            sort: 'lastUpdatedDesc',
+          })
+
+          const response = await fetch(`/brands?${query.toString()}`)
+          if (!response.ok) {
+            throw new Error('Failed to fetch dashboard stats')
+          }
+
+          const data = await response.json() as PagedResponse<Brand> | Brand[]
+
+          if (Array.isArray(data)) {
+            allBrands.push(...data)
+            totalCountFromApi = data.length
+            totalPagesFromApi = 1
+            break
+          }
+
+          allBrands.push(...(data.items ?? []))
+          totalCountFromApi = data.totalCount ?? totalCountFromApi
+          totalPagesFromApi = Math.max(1, data.totalPages ?? 1)
+          currentPage += 1
+        } while (currentPage <= totalPagesFromApi)
+
+        if (disposed) {
+          return
+        }
+
+        const sustainabilityValues = allBrands
+          .map(brand => normalizeSustainabilityScore(brand.sustainabilityScore))
+          .filter((value): value is number => value !== undefined)
+
+        const totalCriteriaCount = allBrands.reduce(
+          (sum, brand) => sum + (brand.criteriaItems?.length ?? 0),
+          0
+        )
+        const filledCriteriaCount = allBrands.reduce(
+          (sum, brand) => sum + (brand.criteriaItems?.filter(item => item.numericValue !== undefined && item.numericValue !== null).length ?? 0),
+          0
+        )
+
+        const averageSustainability = sustainabilityValues.length > 0
+          ? sustainabilityValues.reduce((sum, value) => sum + value, 0) / sustainabilityValues.length
+          : undefined
+        const dataCoverage = totalCriteriaCount > 0
+          ? (filledCriteriaCount / totalCriteriaCount) * 100
+          : undefined
+
+        setStatsBrandCount(totalCountFromApi || allBrands.length)
+        setStatsAverageSustainability(averageSustainability)
+        setStatsDataCoverage(dataCoverage)
+      } catch {
+        if (disposed) {
+          return
+        }
+
+        setStatsBrandCount(0)
+        setStatsAverageSustainability(undefined)
+        setStatsDataCoverage(undefined)
+      }
+    }
+
+    void fetchDashboardStats()
+
+    return () => {
+      disposed = true
     }
   }, [path])
 
@@ -353,9 +424,9 @@ function App() {
       <Header
         searchQuery={searchQuery}
         onSearchQueryChange={handleSearchQueryChange}
-        brandCount={totalCount}
-        averageSustainability={averageSustainability}
-        dataCoverage={dataCoverage}
+        brandCount={statsBrandCount}
+        averageSustainability={statsAverageSustainability}
+        dataCoverage={statsDataCoverage}
         isLoading={isLoading}
         showAdminShortcut={isAdminSessionActive}
         activeSort={activeSort}

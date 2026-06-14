@@ -19,21 +19,21 @@ public static class BrandScoreCalculator
             [Key("Material", "Certifications")] = new("Material", "Certifications", 0.25m, null),
 
             // Labor
-            [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.35m, null),
-            [Key("Labor", "Worker safety & working hours")] = new("Labor", "Worker safety & working hours", 0.25m, null),
+            [Key("Labor", "Living wage commitment & coverage")] = new("Labor", "Living wage commitment & coverage", 0.30m, null),
+            [Key("Labor", "Worker safety & working hours")] = new("Labor", "Worker safety & working hours", 0.30m, null),
             [Key("Labor", "Freedom of association / grievance mechanisms")] = new("Labor", "Freedom of association / grievance mechanisms", 0.20m, null),
             [Key("Labor", "Supplier audit transparency")] = new("Labor", "Supplier audit transparency", 0.20m, null),
 
             // Carbon
-            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.35m, null),
+            [Key("Carbon", "Reduction targets & progress")] = new("Carbon", "Reduction targets & progress", 0.30m, null),
             [Key("Carbon", "Renewable energy")] = new("Carbon", "Renewable energy", 0.30m, "%"),
-            [Key("Carbon", "Transport & logistics")] = new("Carbon", "Transport & logistics", 0.20m, null),
+            [Key("Carbon", "Transport & logistics")] = new("Carbon", "Transport & logistics", 0.25m, null),
             [Key("Carbon", "Scope 1-3 measurement")] = new("Carbon", "Scope 1-3 measurement", 0.15m, null),
 
             // Longevity
-            [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.40m, null),
+            [Key("Longevity", "Durability Testing / Expected Lifetime")] = new("Longevity", "Durability Testing / Expected Lifetime", 0.35m, null),
             [Key("Longevity", "Repairability & Repair Services")] = new("Longevity", "Repairability & Repair Services", 0.30m, null),
-            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.30m, null)
+            [Key("Longevity", "Circularity Programs")] = new("Longevity", "Circularity Programs", 0.35m, null)
         };
 
     public static void ApplyScores(ClothingBrand brand)
@@ -78,6 +78,7 @@ public static class BrandScoreCalculator
             brand.SustainabilityScore = null;
         }
 
+        // Transparency reflects criteria completion (0-5), not sustainability performance.
         var transparency = coverageRatio * 5m;
         brand.TransparencyScore = RoundToOneDecimal(Clamp(transparency, 0m, 5m));
         brand.ProsSummary = BuildSummary(pros);
@@ -178,6 +179,7 @@ public static class BrandScoreCalculator
 
         var categoryAverage = weightedTotal / weightSum;
         var categoryCoverageRatio = CountScoreableCriteria(categoryItems) / (decimal)Math.Max(categoryItems.Count, 1);
+        // Coverage penalty formula: S'c = Sc * (0.6 + 0.4 * rc)
         var coveragePenaltyMultiplier = 0.6m + (0.4m * categoryCoverageRatio);
         var coverageAdjustedCategoryScore = categoryAverage * coveragePenaltyMultiplier;
 

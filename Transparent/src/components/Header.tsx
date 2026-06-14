@@ -46,9 +46,9 @@ export default function Header({
           </button>
         )}
 
-        <h1 className="header-title">Transparent</h1>
+        <h1 className="header-title">Transparent Fashion</h1>
         <p className="header-subtitle">
-          Making fashion sustainability more transparent. Explore apparel brands, sustainability scores, and the publicly available information behind each evaluation.
+          Making clothing sustainability more transparent. Explore apparel brands, sustainability scores, and the publicly available information behind each evaluation.
         </p>
         <form className={`search-form ${isSearching ? 'search-form-active' : ''}`} onSubmit={handleSearch}>
           <input
@@ -62,22 +62,20 @@ export default function Header({
 
         <p className="header-last-updated">Data last updated: {lastUpdatedLabel}</p>
 
-        {!isSearching && (
-          <div className="stats-container">
-            <div className="stat">
-              <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : brandCount}</div>
-              <div className="stat-label">BRANDS</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : (averageSustainability?.toFixed(0) ?? 'n/a')}</div>
-              <div className="stat-label">AVG SCORE</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : `${dataCoverage?.toFixed(0) ?? 'n/a'}%`}</div>
-              <div className="stat-label">AVG DATA COVERAGE</div>
-            </div>
+        <div className="stats-container">
+          <div className="stat">
+            <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : brandCount}</div>
+            <div className="stat-label">BRANDS</div>
           </div>
-        )}
+          <div className="stat">
+            <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : (averageSustainability?.toFixed(0) ?? 'n/a')}</div>
+            <div className="stat-label">AVG SCORE</div>
+          </div>
+          <div className="stat">
+            <div className="stat-number">{isLoading ? <span className="header-skeleton header-skeleton-number" /> : `${dataCoverage?.toFixed(0) ?? 'n/a'}%`}</div>
+            <div className="stat-label">AVG DATA COVERAGE</div>
+          </div>
+        </div>
 
         {!isSearching && (
           <div className="header-tools" aria-label="Dashboard controls">

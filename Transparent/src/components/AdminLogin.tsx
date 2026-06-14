@@ -29,7 +29,7 @@ export default function AdminLogin() {
   return (
     <main className="admin-login-page">
       <section className="admin-login-card" aria-label="Admin login form">
-        <p className="admin-login-kicker">Transparent</p>
+        <p className="admin-login-kicker">Transparent Fashion</p>
         <h1 className="admin-login-title">Admin Login</h1>
         <p className="admin-login-subtitle">Sign in to manage brand profiles, criteria, and source updates.</p>
 
@@ -60,7 +60,7 @@ export default function AdminLogin() {
 
         {error && <p className="admin-login-error">{error}</p>}
 
-        <a href="/" className="admin-login-backlink">Back to Transparency Index</a>
+        <a href="/" className="admin-login-backlink">Back to Transparent Fashion</a>
       </section>
     </main>
   )

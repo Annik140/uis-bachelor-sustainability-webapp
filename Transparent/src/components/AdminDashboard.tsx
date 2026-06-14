@@ -146,7 +146,7 @@ export default function AdminDashboard() {
       <section className="admin-dashboard-shell">
         <header className="admin-dashboard-header">
           <div>
-            <p className="admin-dashboard-kicker">Transparent</p>
+            <p className="admin-dashboard-kicker">Transparent Fashion</p>
             <h1 className="admin-dashboard-title">Admin Dashboard</h1>
             <p className="admin-dashboard-subtitle">Manage brand entries, keep scoring data current, and publish consistent updates.</p>
           </div>

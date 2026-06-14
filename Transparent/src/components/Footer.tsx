@@ -10,7 +10,7 @@ export default function Footer() {
           <div className="footer-section">
             <h3 className="footer-section-title">OUR MISSION</h3>
             <p className="footer-text">
-              Transparent aims to make fashion sustainability information easier to access and understand through a structured database, helping users explore sustainability information across apparel brands.
+              Transparent Fashion aims to make clothing sustainability information easier to access and understand through a structured database, helping users explore sustainability information across apparel brands.
             </p>
           </div>
 
