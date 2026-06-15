@@ -122,6 +122,34 @@ public static class RealBrandSeeder
                     ("Patagnia Inc Wikipedia", "https://en.wikipedia.org/wiki/Patagonia,_Inc."),
                 ],
                 certifications: ["SBTi", "GRS", "bluesign", "RWS", "GOTS", "RDS", "B Corp", "FSC"]
+            ),
+            BuildBrand(
+                brandName: "Fj\u00E4llr\u00E4ven",
+                description: "Fj\u00E4llr\u00E4ven is a Swedish brand specialising in outdoor equipment, mostly clothing and luggage.",
+                logoPath: "/brand-logos/d47b7003adfb4287ab8996051ae1f2d1.png",
+                criteria: FillCriteria(template, new Dictionary<string, decimal>
+                {
+                    ["Material:Fiber traceability"] = 100,
+                    ["Material:Chemical management"] = 100,
+                    ["Material:Certifications"] = 70,
+                    ["Labor:Living wage commitment & coverage"] = 50,
+                    ["Labor:Worker safety & working hours"] = 50,
+                    ["Labor:Freedom of association / grievance mechanisms"] = 50,
+                    ["Labor:Supplier audit transparency"] = 25,
+                    ["Carbon:Scope 1-3 measurement"] = 50,
+                    ["Carbon:Reduction targets & progress"] = 50,
+                    ["Carbon:Renewable energy"] = 100,
+                    ["Carbon:Transport & logistics"] = 75,
+                    ["Longevity:Durability Testing / Expected Lifetime"] = 25,
+                    ["Longevity:Repairability & Repair Services"] = 100,
+                }),
+                sources:
+                [
+                    ("Sustainability and CSR 2025", "https://www.fjallraven.com/49cc25/globalassets/fjallraven/eu/csr/fjr-csr-summary-2025.pdf"),
+                    ("FENIX OUTDOOR Chemical Guideline and Restricted Substances List (RSL)", "https://www.fenixoutdoor.com/wp-content/uploads/2024/07/Guideline_Chemicals_EN_CLEAN-Rev-7.0-Fenix-Outdoor.pdf"),
+                    ("Fj\u00E4llr\u00E4ven Wikipedia", "https://en.wikipedia.org/wiki/Fj%C3%A4llr%C3%A4ven"),
+                ],
+                certifications: []
             )
         ];
     }

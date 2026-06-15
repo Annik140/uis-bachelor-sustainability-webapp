@@ -14,6 +14,14 @@ From the repository root, run:
 pwsh ./scripts/start-dev.ps1
 ```
 
+Before running the script on a fresh clone, make sure PostgreSQL is installed and running, and create the development database once:
+
+```sql
+CREATE DATABASE sustainability_db_dev;
+```
+
+Also update `appsettings.Development.json` with your local PostgreSQL password if it is not already configured.
+
 The script will:
 
 1. Prompt for admin credentials
@@ -52,16 +60,22 @@ Create a development database:
 CREATE DATABASE sustainability_db_dev;
 ```
 
-Configure connection string via one of these options:
+Then open `appsettings.Development.json` and replace `YOUR_POSTGRES_PASSWORD` with the password you set when installing PostgreSQL:
 
-- Update `appsettings.Development.json` locally
-- Set environment variable `ConnectionStrings__DefaultConnection`
-- Use `.env.example` as a reference template (values must still be applied to environment/appsettings)
+```json
+"DefaultConnection": "Host=localhost;Port=5432;Database=sustainability_db_dev;Username=postgres;Password=your-actual-password"
+```
 
-Example value:
+If your local PostgreSQL has no password, leave it empty:
 
-```text
-Host=localhost;Port=5432;Database=sustainability_db_dev;Username=postgres;Password=your-postgres-password
+```json
+"DefaultConnection": "Host=localhost;Port=5432;Database=sustainability_db_dev;Username=postgres;Password="
+```
+
+Alternatively, set it as an environment variable instead of editing the file:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=sustainability_db_dev;Username=postgres;Password=your-actual-password"
 ```
 
 ### 3. Backend dependencies and admin bootstrap
