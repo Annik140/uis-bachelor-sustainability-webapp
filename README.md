@@ -104,15 +104,15 @@ Admin login:
 - URL: `/admin/login`
 - Username/password: same values you stored in user-secrets
 
-## Brand Seeding Mode
+## Brand Seeding
 
-`Seeding:Mode` is configurable and defaults to `None`.
+On first startup, if no brands exist in the database, the real curated brand dataset is seeded automatically. No configuration is needed.
 
-- `None`: no automatic brand seeding
+`Seeding:Mode` can also be set explicitly in `appsettings.Development.json` or via environment variable `Seeding__Mode`:
+
+- `None`: skip seeding (auto-seed still runs if no brands exist)
 - `Demo`: synthetic demo brands
-- `Real`: exported real-brand seed data
-
-Set in `appsettings.Development.json` or with environment variable `Seeding__Mode`.
+- `Real`: real-brand seed data
 
 Example (PowerShell):
 
