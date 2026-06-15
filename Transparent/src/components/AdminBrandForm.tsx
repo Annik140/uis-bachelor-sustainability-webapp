@@ -7,9 +7,6 @@ type Mode = 'create' | 'edit'
 type EvidenceSource = {
   sourceTitle: string
   sourceUrl: string
-  sourceType?: string
-  publishedAtUtc?: string
-  notes?: string
 }
 
 type Certification = {
@@ -45,7 +42,6 @@ type Brand = {
   brandName: string
   logoPath?: string
   description?: string
-  evidenceSourceCount?: number
   evidenceSources?: EvidenceSource[]
   criteriaItems?: CriterionItem[]
   certifications?: Certification[]
@@ -59,9 +55,6 @@ function serializeBrandForDirtyCheck(brand: Brand) {
     evidenceSources: (brand.evidenceSources ?? []).map(source => ({
       sourceTitle: source.sourceTitle ?? '',
       sourceUrl: source.sourceUrl ?? '',
-      sourceType: source.sourceType ?? '',
-      publishedAtUtc: source.publishedAtUtc ?? '',
-      notes: source.notes ?? '',
     })),
     criteriaItems: (brand.criteriaItems ?? []).map(item => ({
       category: item.category ?? '',
@@ -106,7 +99,6 @@ const createEmptyBrand = (): Brand => ({
   brandName: '',
   logoPath: '',
   description: '',
-  evidenceSourceCount: 0,
   evidenceSources: [],
   certifications: [],
   criteriaItems: DEFAULT_CRITERIA.map(c => ({
@@ -389,8 +381,6 @@ export default function AdminBrandForm({ mode, brandId }: { mode: Mode; brandId?
     const sourceRecord: EvidenceSource = {
       sourceTitle: title,
       sourceUrl,
-      sourceType: '',
-      notes: ''
     }
 
     const evidenceSources = [...(form.evidenceSources ?? [])]

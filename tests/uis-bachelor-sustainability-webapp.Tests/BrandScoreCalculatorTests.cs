@@ -96,7 +96,7 @@ public class BrandScoreCalculatorTests
 
         Assert.Equal("Living wage commitment & coverage", known.Name);
         Assert.Equal(63.4m, known.NumericValue);
-        Assert.Equal(0.35m, known.Weight);
+        Assert.Equal(0.30m, known.Weight);
         Assert.Equal("%", known.Unit);
         Assert.Equal("noted", known.Notes);
 

@@ -154,7 +154,6 @@ public static class RealBrandSeeder
             {
                 SourceTitle = source.Title,
                 SourceUrl = source.Url,
-                SourceType = string.Empty,
                 CreatedAtUtc = DateTime.UtcNow,
             });
         }
@@ -168,7 +167,6 @@ public static class RealBrandSeeder
             });
         }
 
-        brand.EvidenceSourceCount = brand.EvidenceSources.Count;
         BrandScoreCalculator.NormalizeCriteria(brand);
         BrandScoreCalculator.ApplyScores(brand);
         return brand;

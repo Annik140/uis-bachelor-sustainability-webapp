@@ -12,7 +12,6 @@ public class ClothingBrand
     public decimal? LaborPracticesScore { get; set; }
     public decimal? CarbonFootprintScore { get; set; }
     public decimal? ProductLongevityScore { get; set; }
-    public int EvidenceSourceCount { get; set; }
     public decimal? SustainabilityScore { get; set; }
     public decimal? TransparencyScore { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

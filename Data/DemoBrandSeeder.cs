@@ -230,7 +230,6 @@ public static class DemoBrandSeeder
         {
             SourceTitle = sourceTitle,
             SourceUrl = "https://example.com/report",
-            SourceType = "Report",
             CreatedAtUtc = DateTime.UtcNow,
         });
 
@@ -243,7 +242,6 @@ public static class DemoBrandSeeder
             });
         }
 
-        brand.EvidenceSourceCount = brand.EvidenceSources.Count;
         BrandScoreCalculator.NormalizeCriteria(brand);
         BrandScoreCalculator.ApplyScores(brand);
         return brand;

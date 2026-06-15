@@ -14,9 +14,6 @@ public class BrandEvidenceSourceInputDto
 {
     public required string SourceTitle { get; set; }
     public required string SourceUrl { get; set; }
-    public string? SourceType { get; set; }
-    public DateTime? PublishedAtUtc { get; set; }
-    public string? Notes { get; set; }
 }
 
 public class BrandCriterionItemInputDto

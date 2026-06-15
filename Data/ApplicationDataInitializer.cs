@@ -50,6 +50,14 @@ public static class ApplicationDataInitializer
 
     private static void ApplyBrandSeeding(AppDbContext db, IConfiguration configuration, ILogger logger)
     {
+        // Seed data with RealBrandSeeder if no brands exist
+        if (!db.ClothingBrands.Any())
+        {
+            RealBrandSeeder.Seed(db, logger);
+            logger.LogInformation("Automatic real brand seeding completed because no brands existed.");
+            return;
+        }
+
         var rawMode = configuration[SeedingModeConfigKey];
         var mode = (rawMode ?? "none").Trim().ToLowerInvariant();
 

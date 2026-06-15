@@ -29,9 +29,6 @@ type EvidenceSource = {
   id: number
   sourceTitle: string
   sourceUrl: string
-  sourceType?: string
-  publishedAtUtc?: string
-  notes?: string
 }
 
 type BrandCertification = {

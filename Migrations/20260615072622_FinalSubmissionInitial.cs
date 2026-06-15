@@ -7,11 +7,30 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace uis_bachelor_sustainability_webapp.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialReset : Migration
+    public partial class FinalSubmissionInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AdminUsers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Username = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    NormalizedUsername = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    LastLoginAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminUsers", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "ClothingBrands",
                 columns: table => new
@@ -19,14 +38,14 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     BrandName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Category = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
+                    LogoPath = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     ProsSummary = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     ConsSummary = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     MaterialSustainabilityScore = table.Column<decimal>(type: "numeric(4,1)", precision: 4, scale: 1, nullable: true),
                     LaborPracticesScore = table.Column<decimal>(type: "numeric(4,1)", precision: 4, scale: 1, nullable: true),
                     CarbonFootprintScore = table.Column<decimal>(type: "numeric(4,1)", precision: 4, scale: 1, nullable: true),
                     ProductLongevityScore = table.Column<decimal>(type: "numeric(4,1)", precision: 4, scale: 1, nullable: true),
-                    EvidenceSourceCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     SustainabilityScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: true),
                     TransparencyScore = table.Column<decimal>(type: "numeric(4,1)", precision: 4, scale: 1, nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -93,9 +112,6 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                     ClothingBrandId = table.Column<int>(type: "integer", nullable: false),
                     SourceTitle = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
                     SourceUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    SourceType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    PublishedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
@@ -108,6 +124,12 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminUsers_NormalizedUsername",
+                table: "AdminUsers",
+                column: "NormalizedUsername",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BrandCertifications_ClothingBrandId",
@@ -144,6 +166,9 @@ namespace uis_bachelor_sustainability_webapp.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AdminUsers");
+
             migrationBuilder.DropTable(
                 name: "BrandCertifications");
 

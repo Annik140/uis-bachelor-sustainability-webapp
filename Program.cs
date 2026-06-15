@@ -412,7 +412,6 @@ public class Program
                     BrandName = input.BrandName.Trim(),
                     LogoPath = input.LogoPath?.Trim(),
                     Description = input.Description?.Trim(),
-                    EvidenceSourceCount = 0,
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow
                 };
@@ -459,7 +458,6 @@ public class Program
                 existing.BrandName = input.BrandName.Trim();
                 existing.LogoPath = input.LogoPath?.Trim();
                 existing.Description = input.Description?.Trim();
-                existing.EvidenceSourceCount = 0;
                 db.BrandEvidenceSources.RemoveRange(existing.EvidenceSources);
                 AddEvidenceSources(existing, input);
                 db.BrandCriterionItems.RemoveRange(existing.CriteriaItems);
@@ -818,14 +816,9 @@ public class Program
                 {
                     SourceTitle = source.SourceTitle.Trim(),
                     SourceUrl = source.SourceUrl.Trim(),
-                    SourceType = source.SourceType?.Trim(),
-                    PublishedAtUtc = source.PublishedAtUtc,
-                    Notes = source.Notes?.Trim(),
                     CreatedAtUtc = DateTime.UtcNow
                 });
             }
-
-            target.EvidenceSourceCount = Math.Max(target.EvidenceSourceCount, target.EvidenceSources.Count);
         }
 
         static void AddCriteriaItems(ClothingBrand target, BrandUpsertDto input)

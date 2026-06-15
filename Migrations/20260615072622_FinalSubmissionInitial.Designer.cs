@@ -12,8 +12,8 @@ using uis_bachelor_sustainability_webapp.Data;
 namespace uis_bachelor_sustainability_webapp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260610104819_AddAdminUsers")]
-    partial class AddAdminUsers
+    [Migration("20260615072622_FinalSubmissionInitial")]
+    partial class FinalSubmissionInitial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -171,21 +171,10 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime?>("PublishedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("SourceTitle")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
-
-                    b.Property<string>("SourceType")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("SourceUrl")
                         .IsRequired()
@@ -216,10 +205,6 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         .HasPrecision(4, 1)
                         .HasColumnType("numeric(4,1)");
 
-                    b.Property<string>("Category")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
                     b.Property<string>("ConsSummary")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -231,14 +216,13 @@ namespace uis_bachelor_sustainability_webapp.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<int>("EvidenceSourceCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<decimal?>("LaborPracticesScore")
                         .HasPrecision(4, 1)
                         .HasColumnType("numeric(4,1)");
+
+                    b.Property<string>("LogoPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<decimal?>("MaterialSustainabilityScore")
                         .HasPrecision(4, 1)

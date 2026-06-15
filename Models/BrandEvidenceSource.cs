@@ -8,9 +8,6 @@ public class BrandEvidenceSource
     public int ClothingBrandId { get; set; }
     public required string SourceTitle { get; set; }
     public required string SourceUrl { get; set; }
-    public string? SourceType { get; set; }
-    public DateTime? PublishedAtUtc { get; set; }
-    public string? Notes { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     [JsonIgnore]

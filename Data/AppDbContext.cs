@@ -34,7 +34,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.LaborPracticesScore).HasPrecision(4, 1);
             entity.Property(e => e.CarbonFootprintScore).HasPrecision(4, 1);
             entity.Property(e => e.ProductLongevityScore).HasPrecision(4, 1);
-            entity.Property(e => e.EvidenceSourceCount).HasDefaultValue(0);
             entity.Property(e => e.SustainabilityScore).HasPrecision(5, 2);
             entity.Property(e => e.TransparencyScore).HasPrecision(4, 1);
             entity.Property(e => e.UpdatedAtUtc).HasDefaultValueSql("NOW()");
@@ -60,8 +59,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.Property(e => e.SourceTitle).HasMaxLength(250).IsRequired();
             entity.Property(e => e.SourceUrl).HasMaxLength(1000).IsRequired();
-            entity.Property(e => e.SourceType).HasMaxLength(100);
-            entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("NOW()");
             entity.HasIndex(e => e.ClothingBrandId);
         });
